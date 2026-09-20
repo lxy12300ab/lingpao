@@ -2,6 +2,7 @@
 import re
 from datetime import date, timedelta
 from itertools import product
+from collections import Counter
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 import pytesseract
 from .models import Dataset
@@ -52,6 +53,23 @@ def period_for(raw, captured):
 def crop(image, box):
     x1, y1, x2, y2 = box
     return image.crop((max(0, int(x1)), max(0, int(y1)), min(image.width, int(x2)), min(image.height, int(y2))))
+
+def retry_daily_label(image, labels, center, step):
+    """Retry one localized numeric label; never reconstruct it from the total."""
+    nearby = [t for t in labels
+              if re.fullmatch(r'[0-9][0-9./]*', t['text'])
+              and abs(t['x'] + t['w']/2 - center) < step*.3
+              and 0 < t['w'] < step*.8 and 0 < t['h'] < image.width*.08]
+    if len(nearby) != 1:
+        return None, []
+    t = nearby[0]
+    pad = max(4, image.width*.006)
+    region = crop(image, (t['x']-pad, t['y']-pad,
+                          t['x']+t['w']+pad, t['y']+t['h']+pad))
+    readings = [text(region, 'eng', psm, '0123456789.') for psm in (7, 8, 13)]
+    votes = Counter(float(s) for s in readings if NUMBER.fullmatch(s) and 0 <= float(s) <= 3000)
+    agreed = [value for value, count in votes.items() if count >= 2]
+    return (agreed[0] if len(agreed) == 1 else None), readings
 
 def recognize(path, captured: date):
     with Image.open(path) as src:
@@ -125,11 +143,28 @@ def recognize(path, captured: date):
                 green = sum(1 for r,g,b in box.get_flattened_data() if g > 100 and g > r*1.35 and g > b*1.15)
                 if green > box.width*box.height*.025:
                     group.append(0.)
-        if any(not g or len(g)>3 for g in groups):
-            raise ValueError('七日数值缺失或存在多个候选，未写入每日数据')
+        labels = [t for t in ts if km['y']+km['h']+w*.04 < t['y'] < axis_y-w*.03]
+        retries = []
+        for i, group in enumerate(groups):
+            if len(group) != 1:
+                value, readings = retry_daily_label(image, labels, x0+i*step, step)
+                retries.append({'date': (captured-timedelta(days=6-i)).isoformat(),
+                                'readings': readings, 'accepted': value})
+                if value is not None:
+                    groups[i] = [value]
+        evidence['daily_total'] = total
+        evidence['daily_columns'] = [
+            {'date': (captured-timedelta(days=6-i)).isoformat(), 'candidates': group}
+            for i, group in enumerate(groups)]
+        if retries:
+            evidence['daily_retries'] = retries
+        unresolved = [r['date'] for r in evidence['daily_columns'] if len(r['candidates']) != 1]
+        if unresolved:
+            raise ValueError('每日里程需核对：' + '、'.join(unresolved) + ' 数字缺失或存在歧义，未写入每日数据')
         valid = {tuple(v) for v in product(*groups) if abs(sum(v)-total) <= max(5, total*.05)}
         if len(valid) != 1:
-            raise ValueError('七日数字之和与总里程不符或存在歧义')
+            raise ValueError('七日数字之和与总里程不符或存在歧义，请核对 ' +
+                             (captured-timedelta(days=6)).isoformat() + ' 至 ' + captured.isoformat())
         values = valid.pop()
         output['daily'] = [{'date': (captured-timedelta(days=6-i)).isoformat(), 'km': v} for i,v in enumerate(values)]
         evidence['daily_total'] = total
@@ -192,4 +227,4 @@ def recognize(path, captured: date):
     except ValueError as exc:
         warnings.append(f'周能耗：{exc}')
     return {'data': Dataset(**output).model_dump(mode='json'), 'warnings': warnings, 'evidence': evidence,
-            'captured_date': captured.isoformat(), 'engine': 'tesseract-chi_sim+eng-v1'}
+            'captured_date': captured.isoformat(), 'engine': 'tesseract-chi_sim+eng-v2'}
