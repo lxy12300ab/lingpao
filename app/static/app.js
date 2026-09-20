@@ -25,6 +25,7 @@ let range = "month",
   refreshing = false;
 let custom = { start: "", end: "" },
   selectedMileage = "",
+  mileagePage = 0,
   selectedWeek = "",
   calendarSelection = "";
 let reviewId,
@@ -146,6 +147,10 @@ function selectedRows() {
   return data.daily.filter((r) => inRange(r.date));
 }
 function navigate(name) {
+  if (name === "overview" && pageName !== "overview") {
+    selectedMileage = "";
+    mileagePage = 0;
+  }
   pageName = name;
   document
     .querySelectorAll(".page-content")
@@ -183,6 +188,7 @@ function setRange(value) {
   range = value;
   recordsLimit = 60;
   selectedMileage = "";
+  mileagePage = 0;
   selectedWeek = "";
   const b = bounds();
   if (b.end) calendar = (b.end > today() ? today() : b.end).slice(0, 7);
@@ -270,7 +276,7 @@ function chartData(rows) {
         ? monday(r.date)
         : view === "monthly"
           ? r.date.slice(0, 7)
-          : r.date;
+          : view === "yearly" ? r.date.slice(0, 4) : r.date;
     const old = grouped.get(key) || { key, value: 0, count: 0 };
     old.value += r.km;
     old.count++;
@@ -286,7 +292,7 @@ function chartData(rows) {
     for (let d = start; d <= last; d = add(d, 1))
       if (!grouped.has(d)) grouped.set(d, { key: d, value: null, count: 0 });
   }
-  return [...grouped.values()].sort((a, b) => a.key.localeCompare(b.key));
+  return [...grouped.values()].sort((a, b) => b.key.localeCompare(a.key));
 }
 function axis(svg, W, H, max, left = 36, right = 12, top = 15, bottom = 30) {
   const base = H - bottom,
@@ -314,7 +320,10 @@ function axis(svg, W, H, max, left = 36, right = 12, top = 15, bottom = 30) {
 }
 function renderMileage(rows) {
   const all = chartData(rows),
-    items = all.slice(-120),
+    pageSize = {daily: 31, weekly: 26, monthly: 24, yearly: 10}[view],
+    pageCount = Math.max(1, Math.ceil(all.length / pageSize));
+  mileagePage = Math.min(mileagePage, pageCount - 1);
+  const items = all.slice(mileagePage * pageSize, (mileagePage + 1) * pageSize),
     target = $("mileageChart"),
     readout = $("mileageReadout");
   target.replaceChildren();
@@ -323,9 +332,16 @@ function renderMileage(rows) {
     daily: "已记录日均",
     weekly: "已记录周均",
     monthly: "已记录月均",
+    yearly: "已记录年均",
   }[view];
   $("chartNote").textContent =
-    (all.length > 120 ? "显示最近 120 项 · " : "") + "点按查看 · 空缺不计为 0";
+    "最新在左 · 按筛选范围汇总 · 空缺不计为 0";
+  $("mileagePager").hidden = pageCount <= 1;
+  $("mileageNewer").disabled = mileagePage === 0;
+  $("mileageOlder").disabled = mileagePage === pageCount - 1;
+  $("mileagePageLabel").textContent = "第 " + (mileagePage + 1) + " / " + pageCount + " 页 · 共 " + all.length + " 项";
+  $("mileagePageRange").textContent = items.length
+    ? items[0].key + " → " + items[items.length - 1].key : "";
   if (!rows.length) {
     empty(
       target,
@@ -346,7 +362,7 @@ function renderMileage(rows) {
     role: "group",
   });
   svg.style.minWidth = (items.length > 45 ? items.length * 12 + 48 : 0) + "px";
-  const observed = items.filter((r) => r.value !== null),
+  const observed = all.filter((r) => r.value !== null),
     maxRaw = Math.max(...observed.map((r) => r.value), 1);
   const max = Math.ceil(maxRaw / 20) * 20,
     { base, plotHeight, left, right } = axis(svg, width, H, max);
@@ -364,7 +380,8 @@ function renderMileage(rows) {
   );
   const bars = [];
   let selected = items.findIndex((r) => r.key === selectedMileage);
-  if (selected < 0) selected = items.findLastIndex((r) => r.value !== null);
+  if (selected < 0) selected = items.findIndex((r) => r.value !== null);
+  if (selected < 0 && items.length) selected = 0;
   function choose(i) {
     selectedMileage = items[i].key;
     bars.forEach((b, j) => {
@@ -376,7 +393,7 @@ function renderMileage(rows) {
           ? fullDate(r.key)
           : view === "weekly"
             ? r.key + " 起的这一周"
-            : monthName(r.key);
+            : view === "yearly" ? r.key + " 年" : monthName(r.key);
     readout.replaceChildren(
       node("span", "", label),
       node("strong", "", r.value === null ? "未记录" : num(r.value)),
@@ -423,7 +440,7 @@ function renderMileage(rows) {
         svgNode(
           "text",
           { x, y: base + 22, "text-anchor": "middle", class: "chart-label" },
-          view === "monthly"
+          view === "yearly" ? r.key : view === "monthly"
             ? r.key.slice(2).replace("-", "/")
             : r.key.slice(5).replace("-", "/"),
         ),
@@ -441,9 +458,7 @@ function renderMileage(rows) {
     });
     hit.addEventListener("click", () => choose(i));
     hit.addEventListener("focus", () => choose(i));
-    hit.addEventListener("pointerenter", (e) => {
-      if (e.pointerType === "mouse") choose(i);
-    });
+    // Selection changes only through deliberate interaction, not incidental hover.
     hit.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -462,6 +477,11 @@ function renderMileage(rows) {
   });
   target.append(svg);
   if (selected >= 0) choose(selected);
+  // Keep the selected (by default latest recorded) period visible on long charts.
+  target.scrollLeft = Math.max(
+    0,
+    ((selected + 0.5) / items.length) * target.scrollWidth - target.clientWidth / 2,
+  );
   // Horizontal scrubbing selects a day; vertical swipes remain normal page scrolling.
   if (items.length <= 45) {
     svg.style.touchAction = "pan-y";
@@ -517,7 +537,9 @@ function renderCalendar() {
             : value < (max * 2) / 3
               ? "level2"
               : "level3";
-    const b = node("button", cls + (date === today() ? " today" : ""), n);
+    const b = node("button", cls + (date === today() ? " today" : ""));
+    b.append(node("span", "calendar-day", n),
+      node("strong", "calendar-km", future ? "—" : value === undefined ? "待补" : num(value)));
     b.type = "button";
     b.disabled = future;
     b.dataset.date = date;
@@ -895,6 +917,9 @@ function renderRecords(rows) {
 function openDay(date) {
   daySelected = date;
   const row = data.daily.find((r) => r.date === date);
+  $("dayKm").value = row ? row.km : "";
+  $("dayKm").dataset.previous = row ? String(row.km) : "";
+  $("dayEditError").textContent = "";
   $("dayTitle").textContent = fullDate(date);
   const target = $("dayDetail");
   target.replaceChildren();
@@ -903,7 +928,7 @@ function openDay(date) {
     value.append(node("small", "", " km"));
     target.append(
       value,
-      node("p", "muted", "同一天有多张截图时，保留已识别的最大里程。"),
+      node("p", "muted", "核对当天的实际里程，可在下方补充或修正。"),
     );
   } else
     target.append(
@@ -932,6 +957,8 @@ async function refresh() {
         .slice()
         .sort((a, b) => a.period.localeCompare(b.period)),
     };
+    selectedMileage = "";
+    mileagePage = 0;
     lastSynced = new Intl.DateTimeFormat("zh-CN", {
       timeZone: "Asia/Shanghai",
       hour: "2-digit",
@@ -1352,6 +1379,7 @@ document.querySelectorAll("[data-view]").forEach(
     (b.onclick = () => {
       view = b.dataset.view;
       selectedMileage = "";
+      mileagePage = 0;
       render();
     }),
 );
@@ -1395,7 +1423,46 @@ $("moreRecords").onclick = () => {
   renderRecords(selectedRows());
 };
 $("energyPeriod").onchange = renderBreakdown;
+function turnMileagePage(delta) {
+  mileagePage = Math.max(0, mileagePage + delta);
+  selectedMileage = "";
+  renderMileage(selectedRows());
+}
+$("mileageNewer").onclick = () => turnMileagePage(-1);
+$("mileageOlder").onclick = () => turnMileagePage(1);
+$("mileageLatest").onclick = () => {
+  mileagePage = 0;
+  selectedMileage = "";
+  renderMileage(selectedRows());
+};
+$("dayEditForm").onsubmit = async (event) => {
+  event.preventDefault();
+  if (busy || !$("dayEditForm").reportValidity()) return;
+  const km = Number($("dayKm").value);
+  if ($("dayKm").value.trim() === "" || !Number.isFinite(km) || km < 0 || km > 3000) return;
+  busy = true;
+  $("daySave").disabled = true;
+  $("dayEditError").textContent = "";
+  try {
+    const saved = await (await api("/api/daily/" + daySelected, {
+      method: "PUT", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({km, expected_km: $("dayKm").dataset.previous === "" ? null : Number($("dayKm").dataset.previous)}),
+    })).json();
+    data.daily = data.daily.filter(r => r.date !== saved.date).concat(saved).sort((a,b) => a.date.localeCompare(b.date));
+    selectedMileage = "";
+    mileagePage = 0;
+    render();
+    $("dayDialog").close();
+    notify("里程已保存，统计与图表已更新");
+  } catch (error) {
+    $("dayEditError").textContent = error.message;
+  } finally {
+    busy = false;
+    $("daySave").disabled = false;
+  }
+};
 $("dayUpload").onclick = () => {
+  if (busy) return;
   $("dayDialog").close();
   openUpload();
   notify("请选择截图实际拍摄日期，不一定是所补记录的日期。");

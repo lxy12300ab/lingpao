@@ -2,13 +2,13 @@ import json
 import os
 import secrets
 import uuid
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 from .. import config, db, backup, service
-from ..models import Dataset
+from ..models import Dataset, ManualMileage
 
 def authorize(request: Request):
     raw = request.headers.get('authorization', '')
@@ -24,6 +24,26 @@ router = APIRouter(prefix='/api', dependencies=[Depends(authorize)])
 @router.get('/data')
 def data():
     return db.get_data()
+
+@router.put('/daily/{day}')
+def edit_daily(day: date, body: ManualMileage):
+    if day > datetime.now(config.TZ).date():
+        raise HTTPException(422, '不能填写未来日期')
+    key = day.isoformat()
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        old = c.execute('SELECT * FROM daily_mileage WHERE date=?', (key,)).fetchone()
+        previous = old['km'] if old else None
+        if previous != body.expected_km:
+            raise HTTPException(409, '这一天的数据已变化，请刷新页面后重新修改')
+        stamp = config.now()
+        c.execute("""INSERT INTO daily_mileage(date,km,source,created_at,updated_at)
+                     VALUES(?,?,'manual',?,?) ON CONFLICT(date) DO UPDATE SET
+                     km=excluded.km,source='manual',screenshot_id=NULL,updated_at=excluded.updated_at""",
+                  (key, body.km, stamp, stamp))
+        db.log(c, 'manual_daily', key, 'ok', json.dumps(
+            {'before': dict(old) if old else None, 'after': body.km}, ensure_ascii=False))
+    return {'date': key, 'km': body.km}
 
 @router.post('/upload')
 async def upload(file: UploadFile = File(...), captured_date: date = Form(...)):

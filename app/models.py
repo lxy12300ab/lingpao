@@ -19,6 +19,10 @@ class Daily(Strict):
     date: date
     km: float = Field(ge=0, le=3000)
 
+class ManualMileage(Strict):
+    km: float = Field(ge=0, le=3000)
+    expected_km: float | None = Field(ge=0, le=3000)
+
 class Weekly(Strict):
     period: str
     value: float = Field(gt=0, le=50)

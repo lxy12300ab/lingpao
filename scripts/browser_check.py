@@ -39,13 +39,50 @@ with sync_playwright() as p:
     expect(page.locator('html')).to_have_attribute('data-theme','light')
     checks.append('system theme changes live; manual override survives reload; returns to system')
 
+    page.locator('[data-range=all]').click()
+    for mode in ['daily', 'weekly', 'monthly', 'yearly']:
+        page.locator('[data-view='+mode+']').click()
+        expected=page.evaluate('chartData(selectedRows()).find(r => r.value !== null).key')
+        assert page.evaluate('selectedMileage')==expected
+        page.locator('#mileageChart .chart-hit').first.hover()
+        assert page.evaluate('selectedMileage')==expected
+        page.locator('#mileageChart .chart-hit').first.click()
+        assert page.evaluate('selectedMileage')==page.evaluate('chartData(selectedRows())[0].key')
+    page.locator('[data-view=daily]').click()
+    checks.append('day/week/month default to latest record; hover does not change selection; click still works')
+
+    # Synthetic ten-year history stays in browser memory, never touches storage.
+    page.evaluate("""() => {
+      window.originalDaily = structuredClone(data.daily);
+      data.daily = Array.from({length:3653}, (_,i) => ({date:add('2016-09-20',i),km:i % 5}));
+      setRange('all');
+    }""")
+    for mode, limit in [('daily',31),('weekly',26),('monthly',24),('yearly',10)]:
+        page.locator('[data-view='+mode+']').click()
+        keys=page.evaluate('chartData(selectedRows()).map(r=>r.key)')
+        assert keys==sorted(keys,reverse=True)
+        assert page.locator('#mileageChart .chart-hit').count()<=limit
+        assert page.evaluate('selectedMileage')==keys[0]
+        if len(keys)>limit:
+            page.locator('#mileageOlder').click()
+            assert page.evaluate('selectedMileage')==keys[limit]
+            page.evaluate('turnMileagePage(10000)')
+            assert page.locator('#mileageChart .chart-hit').last.get_attribute('aria-label').startswith(keys[-1])
+            expect(page.locator('#mileageOlder')).to_be_disabled()
+            page.locator('#mileageLatest').click()
+            assert page.evaluate('selectedMileage')==keys[0]
+        assert page.evaluate('chartData(selectedRows()).reduce((s,r)=>s+(r.value||0),0)')==page.evaluate('data.daily.reduce((s,r)=>s+r.km,0)')
+    page.evaluate('data.daily=window.originalDaily; delete window.originalDaily; setRange("all")')
+    page.locator('[data-view=daily]').click()
+    checks.append('ten-year history: descending day/week/month/year, bounded pages, earliest data reachable, totals preserved')
+
     page.locator('[data-range=custom]').click()
     page.locator('#startDate').fill('2026-09-13');page.locator('#endDate').fill('2026-09-19')
     page.locator('#applyDates').click()
     expect(page.locator('#total')).to_have_text('413')
-    page.locator('#mileageChart .chart-hit').first.click()
+    page.locator('#mileageChart .chart-hit').last.click()
     expect(page.locator('#mileageReadout')).to_contain_text('42')
-    page.locator('#mileageChart .chart-hit').last.focus()
+    page.locator('#mileageChart .chart-hit').first.focus()
     page.keyboard.press('Enter')
     expect(page.locator('#mileageReadout')).to_contain_text('0')
     page.locator('[data-view=weekly]').click()
@@ -63,7 +100,8 @@ with sync_playwright() as p:
     expect(page.locator('#dayDetail')).to_contain_text('0')
     page.locator('[data-close=dayDialog]').click()
     page.locator('#calendarGrid [data-date="2026-09-20"]').click()
-    expect(page.locator('#dayDetail')).to_contain_text('未记录')
+    day_value=page.evaluate('data.daily.find(r => r.date === "2026-09-20")?.km ?? null')
+    expect(page.locator('#dayDetail')).to_contain_text('未记录' if day_value is None else str(day_value)+' km')
     page.locator('[data-close=dayDialog]').click()
     checks.append('custom dates, invalid date guard, day/week/month charts, keyboard, missing versus zero')
 
@@ -87,6 +125,7 @@ with sync_playwright() as p:
             page.locator('[data-page=overview]').click()
             page.screenshot(path=str(out/(engine+'-mobile-light.png')),full_page=True)
             page.emulate_media(color_scheme='dark')
+            expect(page.locator('html')).to_have_attribute('data-theme','dark')
             page.screenshot(path=str(out/(engine+'-mobile-dark.png')),full_page=True)
             page.locator('[data-page=energy]').click()
             page.screenshot(path=str(out/(engine+'-mobile-energy-dark.png')),full_page=True)
@@ -123,6 +162,27 @@ with sync_playwright() as p:
     page.locator('[data-close=reviewDialog]').click()
     page.locator('[data-close=uploadDialog]').click()
     checks.append('mobile upload preview, review form edit and confirmation feedback (mocked writes)')
+
+    page.locator('[data-page=overview]').click()
+    page.locator('#calendarGrid [data-date="2026-09-19"]').click()
+    edits=[]
+    def edit(route):
+        edits.append(route.request.post_data_json)
+        route.fulfill(json={'date':'2026-09-19', 'km':12.5})
+    page.route('**/api/daily/2026-09-19', edit)
+    page.locator('#dayKm').fill('12.5')
+    page.locator('#daySave').click()
+    expect(page.locator('#dayDialog')).not_to_be_visible()
+    expect(page.locator('#calendarGrid [data-date="2026-09-19"] .calendar-km')).to_have_text('12.5')
+    assert edits==[{'km':12.5,'expected_km':0}]
+    page.locator('#calendarGrid [data-date="2026-09-19"]').click()
+    page.route('**/api/daily/2026-09-19', lambda route:route.fulfill(status=409,json={'detail':'数据已变化'}))
+    page.locator('#dayKm').fill('10')
+    page.locator('#daySave').click()
+    expect(page.locator('#dayEditError')).to_contain_text('数据已变化')
+    expect(page.locator('#dayKm')).to_have_value('10')
+    page.locator('[data-close=dayDialog]').click()
+    checks.append('calendar mileage, manual editing and conflict feedback (mocked writes)')
 
     page.locator('[data-page=overview]').click()
     page.route('**/api/data',lambda route:route.abort())

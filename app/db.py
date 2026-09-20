@@ -52,11 +52,16 @@ def merge(c, dataset: Dataset, screenshot_id=None, source='ocr'):
     stamp = config.now()
     for row in dataset.daily:
         key = row.date.isoformat()
-        old = c.execute('SELECT km FROM daily_mileage WHERE date=?', (key,)).fetchone()
+        old = c.execute('SELECT km,source FROM daily_mileage WHERE date=?', (key,)).fetchone()
         if old is None:
             c.execute('INSERT INTO daily_mileage(date,km,source,screenshot_id,created_at,updated_at) VALUES(?,?,?,?,?,?)',
                       (key, row.km, source, screenshot_id, stamp, stamp))
             result['inserted'] += 1
+        elif old['source'] == 'manual':
+            result['unchanged'] += 1
+            if row.km != old['km']:
+                result['rejected'].append({'date': key, 'old': old['km'], 'new': row.km,
+                                           'reason': '保留手动修正里程，请在日历中修改'})
         elif row.km > old['km']:
             c.execute('UPDATE daily_mileage SET km=?,source=?,screenshot_id=?,updated_at=? WHERE date=?',
                       (row.km, source, screenshot_id, stamp, key))

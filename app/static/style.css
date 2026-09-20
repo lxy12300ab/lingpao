@@ -167,7 +167,7 @@ small {
 }
 .brand small {
   display: block;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.8px;
   margin-top: 5px;
   color: var(--muted);
@@ -184,7 +184,23 @@ small {
   font-size: 26px;
   font-weight: 500;
   letter-spacing: -4px;
-  padding-right: 3px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+.brand-mark::before {
+  content: "";
+  width: 70%;
+  height: 70%;
+  background: #f4f0e4;
+  -webkit-mask: url("/leap-mark.svg") center / contain no-repeat;
+  mask: url("/leap-mark.svg") center / contain no-repeat;
+}
+:root[data-theme="dark"] .brand-mark {
+  background: #d1b782;
+}
+:root[data-theme="dark"] .brand-mark::before {
+  background: #182c23;
 }
 .brand-mark span {
   font-size: 18px;
@@ -259,7 +275,7 @@ small {
   gap: 15px;
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 1.8px;
   color: var(--muted);
   font-weight: 550;
@@ -275,7 +291,7 @@ small {
   margin-top: 7px;
 }
 .sync-status {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   display: flex;
   gap: 6px;
@@ -329,7 +345,7 @@ small {
 }
 .range-caption {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -354,7 +370,7 @@ small {
 }
 .section-head .eyebrow {
   margin-bottom: 7px;
-  font-size: 8px;
+  font-size: 12px;
 }
 .distance-card {
   padding: 28px 32px;
@@ -366,7 +382,7 @@ small {
   margin: 0;
 }
 .small-tag {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
   letter-spacing: 0.7px;
 }
@@ -386,7 +402,7 @@ small {
   font-weight: 400;
 }
 .coverage {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--green);
   min-height: 20px;
   line-height: 1.6;
@@ -408,7 +424,7 @@ small {
   gap: 8px;
 }
 .stats span {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .stats strong {
@@ -445,7 +461,7 @@ small {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 2px;
 }
 .vehicle-badge {
@@ -455,7 +471,7 @@ small {
   padding: 7px 10px;
   border-radius: 8px;
   letter-spacing: 0;
-  font-size: 10px;
+  font-size: 12px;
 }
 .vehicle-bottom {
   position: absolute;
@@ -467,7 +483,7 @@ small {
   align-items: flex-end;
 }
 .vehicle-bottom p {
-  font-size: 10px;
+  font-size: 12px;
   margin-bottom: 7px;
   opacity: 0.85;
 }
@@ -486,7 +502,7 @@ small {
   letter-spacing: -0.5px;
 }
 .odometer span {
-  font-size: 9px;
+  font-size: 12px;
   opacity: 0.8;
   display: block;
   margin-top: 6px;
@@ -519,7 +535,7 @@ small {
   align-items: baseline;
   min-height: 44px;
   margin-top: 18px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .chart-readout strong {
@@ -530,7 +546,7 @@ small {
 }
 .chart-readout span:last-child {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 12px;
 }
 .chart-scroll {
   overflow-x: auto;
@@ -553,7 +569,7 @@ small {
 }
 .chart-label {
   fill: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 .chart-bar {
   fill: var(--gold-fill);
@@ -611,7 +627,7 @@ small {
   justify-content: space-between;
   gap: 10px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
   line-height: 1.7;
@@ -650,7 +666,7 @@ small {
   display: flex;
   align-items: center;
   gap: 2px;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .calendar-controls .icon-button {
@@ -667,7 +683,7 @@ small {
 .calendar-weekdays {
   margin: 23px 0 12px;
   text-align: center;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .calendar-grid button {
@@ -675,7 +691,7 @@ small {
   padding: 7px 2px;
   border: 1px solid transparent;
   border-radius: 9px;
-  font-size: 11px;
+  font-size: 12px;
   position: relative;
 }
 .calendar-grid .missing {
@@ -714,7 +730,7 @@ small {
 }
 .calendar-detail {
   min-height: 45px;
-  font-size: 11px;
+  font-size: 12px;
   padding-top: 19px;
   color: var(--muted);
 }
@@ -728,7 +744,7 @@ small {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 12px;
 }
 .calendar-legend span:last-child {
   margin-left: auto;
@@ -773,7 +789,7 @@ small {
   margin-bottom: 6px;
 }
 .insight p {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.8;
 }
@@ -826,7 +842,7 @@ small {
   max-width: 48%;
 }
 .inline-select select {
-  font-size: 11px;
+  font-size: 12px;
   padding: 9px 26px 9px 10px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -885,7 +901,7 @@ small {
   letter-spacing: -1px;
 }
 .donut-center span {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .breakdown-legend {
@@ -917,7 +933,7 @@ small {
   font-weight: 500;
 }
 .breakdown-row small {
-  font-size: 11px;
+  font-size: 12px;
   display: block;
   margin-top: 4px;
   color: var(--muted);
@@ -925,7 +941,7 @@ small {
 }
 .count-tag {
   background: var(--surface);
-  font-size: 10px;
+  font-size: 12px;
   padding: 4px 8px;
   border-radius: 7px;
   color: var(--muted);
@@ -933,7 +949,7 @@ small {
   margin-left: 8px;
 }
 .record-month {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   padding: 26px 0 9px;
   letter-spacing: 0.5px;
@@ -968,7 +984,7 @@ small {
   display: block;
 }
 .record-date small {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   display: block;
   margin-top: 4px;
@@ -981,7 +997,7 @@ small {
   gap: 8px;
 }
 .record-value small {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 #moreRecords {
@@ -1005,7 +1021,7 @@ footer {
   display: flex;
   justify-content: space-between;
   padding: 32px 0 40px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .notice {
@@ -1034,7 +1050,7 @@ footer {
 }
 .pending-banner .muted {
   margin-left: 15px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .pending-banner .icon {
   width: 15px;
@@ -1074,7 +1090,7 @@ dialog::backdrop {
   align-self: flex-start;
 }
 .dialog-head .eyebrow {
-  font-size: 8px;
+  font-size: 12px;
   margin-bottom: 7px;
 }
 .dialog-head h2 {
@@ -1140,7 +1156,7 @@ textarea {
   gap: 10px;
 }
 .theme-options span {
-  font-size: 11px;
+  font-size: 12px;
 }
 .theme-options button.active {
   border-color: var(--green);
@@ -1160,7 +1176,7 @@ textarea {
   align-items: center;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
 }
 .list-item > span {
@@ -1168,14 +1184,14 @@ textarea {
   min-width: 0;
 }
 .list-item button {
-  font-size: 11px;
+  font-size: 12px;
   flex-shrink: 0;
   background: var(--surface);
 }
 .list-item small {
   display: block;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 .status-review {
   color: var(--gold);
@@ -1203,7 +1219,7 @@ summary {
 #logList p {
   padding: 9px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 12px;
 }
 .upload-steps {
   list-style: none;
@@ -1213,7 +1229,7 @@ summary {
   counter-reset: steps;
   margin: 25px 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   gap: 10px;
 }
 .upload-steps li {
@@ -1231,7 +1247,7 @@ summary {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 12px;
 }
 .upload-steps li.active {
   color: var(--green);
@@ -1255,7 +1271,7 @@ summary {
   overflow: hidden;
 }
 .drop-area > span:not(.upload-symbol) {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .drop-area strong {
@@ -1353,7 +1369,7 @@ summary {
 }
 .review-row label {
   margin: 0;
-  font-size: 10px;
+  font-size: 12px;
 }
 .review-row input {
   padding: 9px;
@@ -1373,11 +1389,11 @@ summary {
   grid-template-columns: 1fr 1fr;
 }
 .review-add {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--green);
 }
 .review-period {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 3px;
 }
@@ -1455,7 +1471,7 @@ summary {
     padding: 25px;
   }
   .range-caption {
-    font-size: 10px;
+    font-size: 12px;
   }
   .pills button {
     padding: 7px 12px;
@@ -1492,7 +1508,7 @@ summary {
     border-radius: 11px;
   }
   .brand small {
-    font-size: 7px;
+    font-size: 12px;
     letter-spacing: 1.6px;
   }
   .top-actions {
@@ -1522,7 +1538,7 @@ summary {
     flex-direction: column;
     gap: 5px;
     min-height: 52px;
-    font-size: 10px;
+    font-size: 12px;
     padding: 5px 4px;
     background: transparent !important;
   }
@@ -1550,7 +1566,7 @@ summary {
     display: block;
   }
   .page-heading .eyebrow {
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 1.5px;
     margin-bottom: 8px;
   }
@@ -1559,12 +1575,12 @@ summary {
     letter-spacing: -0.6px;
   }
   .page-heading .muted {
-    font-size: 11px;
+    font-size: 12px;
     margin-top: 6px;
   }
   .sync-status {
     margin-top: 13px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .range-toolbar {
     display: block;
@@ -1578,7 +1594,7 @@ summary {
     border-radius: 12px;
   }
   .pills button {
-    font-size: 10px;
+    font-size: 12px;
     padding: 7px 9px;
     min-height: 34px;
   }
@@ -1588,7 +1604,7 @@ summary {
   .range-caption {
     display: block;
     margin: 12px 2px 0;
-    font-size: 10px;
+    font-size: 12px;
   }
   .overview-grid {
     display: flex;
@@ -1621,10 +1637,10 @@ summary {
     font-size: 23px;
   }
   .stats span {
-    font-size: 10px;
+    font-size: 12px;
   }
   .coverage {
-    font-size: 10px;
+    font-size: 12px;
   }
   .vehicle-card {
     height: 148px;
@@ -1638,11 +1654,11 @@ summary {
     top: 14px;
     left: 19px;
     right: 19px;
-    font-size: 8px;
+    font-size: 12px;
   }
   .vehicle-badge {
     padding: 5px 8px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .vehicle-bottom {
     bottom: 18px;
@@ -1659,7 +1675,7 @@ summary {
     font-size: 20px;
   }
   .odometer span {
-    font-size: 8px;
+    font-size: 12px;
   }
   .vehicle-shade {
     background: linear-gradient(0deg, #15221bdd, transparent 85%);
@@ -1674,31 +1690,31 @@ summary {
     gap: 8px;
   }
   .section-head .eyebrow {
-    font-size: 7px;
+    font-size: 12px;
     letter-spacing: 1.2px;
   }
   .segments button {
     min-height: 33px;
     padding: 6px 11px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .chart-readout {
     margin-top: 17px;
     gap: 7px;
-    font-size: 10px;
+    font-size: 12px;
     flex-wrap: wrap;
   }
   .chart-readout strong {
     font-size: 24px;
   }
   .chart-readout span:last-child {
-    font-size: 9px;
+    font-size: 12px;
   }
   .interactive-chart svg {
     height: 200px;
   }
   .chart-footer {
-    font-size: 9px;
+    font-size: 12px;
     gap: 8px;
     align-items: flex-start;
   }
@@ -1712,7 +1728,7 @@ summary {
     gap: 14px;
   }
   .calendar-controls {
-    font-size: 11px;
+    font-size: 12px;
   }
   .calendar-controls .icon-button {
     width: 30px;
@@ -1736,7 +1752,7 @@ summary {
     font-size: 55px;
   }
   .energy-summary .main-number small {
-    font-size: 10px;
+    font-size: 12px;
   }
   .energy-change {
     max-width: none;
@@ -1746,14 +1762,14 @@ summary {
     display: flex;
     gap: 10px;
     align-items: center;
-    font-size: 10px;
+    font-size: 12px;
   }
   .energy-change strong {
     font-size: 19px;
     margin: 0;
   }
   .small-tag {
-    font-size: 8px;
+    font-size: 12px;
   }
   .energy-chart svg {
     height: 210px;
@@ -1776,27 +1792,27 @@ summary {
     max-width: 46%;
   }
   .inline-select select {
-    font-size: 9px;
+    font-size: 12px;
     padding: 8px 17px 8px 6px;
   }
   .pending-banner {
     padding: 12px 14px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .pending-banner .muted {
     display: block;
     margin: 3px 0 0;
-    font-size: 10px;
+    font-size: 12px;
   }
   .record-row {
     padding: 14px 0;
   }
   footer {
-    font-size: 9px;
+    font-size: 12px;
     padding: 26px 0 calc(104px + env(safe-area-inset-bottom));
   }
   .notice {
-    font-size: 11px;
+    font-size: 12px;
   }
   dialog {
     padding: 25px 22px calc(24px + env(safe-area-inset-bottom));
@@ -1850,24 +1866,24 @@ summary {
     grid-template-columns: 1fr 90px 30px;
   }
   .list-item {
-    font-size: 10px;
+    font-size: 12px;
   }
   .list-item button {
-    font-size: 10px;
+    font-size: 12px;
     padding: 8px 10px;
   }
   .theme-options button {
     min-height: 85px;
   }
   .theme-options span {
-    font-size: 11px;
+    font-size: 12px;
   }
   #toast {
     bottom: calc(85px + env(safe-area-inset-bottom));
-    font-size: 11px;
+    font-size: 12px;
   }
   .drop-area > span:not(.upload-symbol) {
-    font-size: 9px;
+    font-size: 12px;
   }
 }
 @media (max-width: 360px) {
@@ -1876,7 +1892,7 @@ summary {
   }
   .pills button {
     padding: 7px 7px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .main-number {
     font-size: 54px;
@@ -1891,10 +1907,10 @@ summary {
     padding: 18px;
   }
   .stats span {
-    font-size: 9px;
+    font-size: 12px;
   }
   .page-heading .muted {
-    font-size: 10px;
+    font-size: 12px;
   }
   .primary-nav {
     gap: 2px;
@@ -1908,4 +1924,64 @@ summary {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+.mileage-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.mileage-pager[hidden] { display: none; }
+.mileage-pager small { display: block; margin-top: 5px; color: var(--muted); }
+.mileage-page-actions { display: flex; gap: 6px; }
+.mileage-page-actions button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+}
+.mileage-page-actions button:disabled { opacity: .4; cursor: default; }
+#views { flex-shrink: 0; }
+@media (max-width: 360px) {
+  .chart-panel .section-head { flex-wrap: wrap; gap: 12px; }
+  #views button { padding: 8px 10px; }
+}
+/* Legible secondary text and mileage-first calendar on desktop and phones. */
+.muted, .page-heading .muted, .stats span, .chart-legend,
+.chart-note, .calendar-controls, .calendar-detail, .record-date small,
+.insight p, footer, #connection, #rangeLabel, #dayEditHint {
+  font-size: 14px;
+  line-height: 1.65;
+}
+.pills button, .view-switch button { font-size: 14px; }
+.calendar-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 64px;
+  padding: 6px 1px;
+}
+.calendar-day { font-size: 12px; font-weight: 400; }
+.calendar-km { font-size: 15px; line-height: 1.25; letter-spacing: -.4px; }
+.calendar-grid .missing .calendar-km { font-size: 12px; font-weight: 400; }
+#dayEditForm { margin: 20px 0; }
+#dayEditForm label { display: block; margin-bottom: 10px; font-size: 15px; }
+#dayKm { width: 100%; font-size: 20px; }
+#dayEditError { color: var(--error); font-size: 14px; }
+#dayEditHint { margin: 12px 0; }
+@media (max-width: 600px) {
+  .pills { flex-wrap: wrap; }
+  .pills button { flex: 1 0 auto; min-height: 40px; }
+  .calendar-grid, .calendar-weekdays { gap: 4px; }
+  .calendar-km { font-size: 13px; }
+  .calendar-controls { font-size: 12px; }
+  .chart-legend { flex-wrap: wrap; gap: 8px; }
 }

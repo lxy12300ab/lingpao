@@ -19,8 +19,8 @@
     <meta http-equiv="Expires" content="0" />
     <meta name="build" content="__BUILD__" />
     <title>行程手记 · 零跑 C11</title>
-    <link rel="icon" href="/logo.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg?v=2026.09.20.4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2026.09.20.4" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <script src="/theme.js?v=__BUILD__"></script>
     <link rel="stylesheet" href="/style.css?v=__BUILD__" />
@@ -69,7 +69,7 @@
     <div class="app-shell">
       <header class="topbar">
         <a href="/" class="brand"
-          ><img class="brand-mark" src="/logo.svg" alt="" /><span
+          ><span class="brand-mark" aria-hidden="true"></span><span
             >行程手记<small>LEAPMOTOR C11</small></span
           ></a
         >
@@ -194,7 +194,8 @@
               <div class="segments" id="views" aria-label="里程汇总方式">
                 <button data-view="daily" class="active">日</button
                 ><button data-view="weekly">周</button
-                ><button data-view="monthly">月</button>
+                ><button data-view="monthly">月</button
+                ><button data-view="yearly">年</button>
               </div>
             </div>
             <div
@@ -204,6 +205,14 @@
             ></div>
             <div class="chart-scroll">
               <div id="mileageChart" class="interactive-chart"></div>
+            </div>
+            <div id="mileagePager" class="mileage-pager" hidden>
+              <div><span id="mileagePageLabel" aria-live="polite"></span><small id="mileagePageRange"></small></div>
+              <div class="mileage-page-actions">
+                <button id="mileageNewer" type="button">较新</button>
+                <button id="mileageLatest" type="button">回到最新</button>
+                <button id="mileageOlder" type="button">更早</button>
+              </div>
             </div>
             <div class="chart-footer">
               <span
@@ -252,7 +261,7 @@
                 ><i class="heat three"></i><span>少 → 多</span
                 ><span>虚线为未记录</span>
               </p>
-              <p class="muted">月历独立按自然月浏览。</p>
+              <p class="muted">格内数字为公里数（km），点按可补录或修正。</p>
             </section>
             <section class="panel insight-panel">
               <p class="eyebrow">A CLOSER LOOK</p>
@@ -344,7 +353,7 @@
     <div id="toast" role="status" hidden></div>
     <dialog id="loginDialog" aria-labelledby="loginTitle">
       <form id="loginForm">
-        <img class="brand-mark large" src="/logo.svg" alt="" />
+        <span class="brand-mark large" aria-hidden="true"></span>
         <p class="eyebrow">WELCOME HOME</p>
         <h2 id="loginTitle">欢迎回到你的车库</h2>
         <p class="muted">输入访问密钥，继续记录你的每一程。</p>
@@ -522,6 +531,13 @@
         </button>
       </div>
       <div id="dayDetail"></div>
+      <form id="dayEditForm">
+        <label for="dayKm">当天行驶里程（km）</label>
+        <input id="dayKm" type="number" inputmode="decimal" min="0" max="3000" step="any" required aria-describedby="dayEditHint dayEditError" />
+        <p id="dayEditHint" class="muted">可补录，也可调大或调小。0 表示当天未行驶；手动保存后，截图识别不会覆盖此值。</p>
+        <p id="dayEditError" role="alert"></p>
+        <button id="daySave" type="submit" class="primary full-width">保存里程</button>
+      </form>
       <button id="dayUpload" class="primary full-width">
         补充这一天的截图
       </button>
