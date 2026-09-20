@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f5f2" id="themeColor" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="行程手记" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="build" content="__BUILD__" />
+    <title>行程手记 · 零跑 C11</title>
+    <link rel="icon" href="/logo.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <script src="/theme.js?v=__BUILD__"></script>
+    <link rel="stylesheet" href="/style.css?v=__BUILD__" />
+    <script src="/app.js?v=__BUILD__" defer></script>
+  </head>
+  <body>
+    <svg
+      class="icon-sprite"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <symbol id="i-home" viewBox="0 0 24 24">
+          <path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7" />
+        </symbol>
+        <symbol id="i-energy" viewBox="0 0 24 24">
+          <path d="m13 2-9 12h7l-1 8 10-13h-8Z" />
+        </symbol>
+        <symbol id="i-record" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="16" height="17" rx="3" />
+          <path d="M8 2v5m8-5v5M4 10h16M8 14h3m-3 3h8" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M4 7h16M4 17h16" />
+          <circle cx="9" cy="7" r="3" />
+          <circle cx="15" cy="17" r="3" />
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24">
+          <path d="m9 5 7 7-7 7" />
+        </symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24">
+          <path
+            d="M20 7v5h-5M4 17v-5h5M5 8a8 8 0 0 1 13-3l2 2M4 17l2 2a8 8 0 0 0 13-3"
+          />
+        </symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24">
+          <path
+            d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"
+          />
+        </symbol>
+      </defs>
+    </svg>
+    <div class="app-shell">
+      <header class="topbar">
+        <a href="/" class="brand"
+          ><img class="brand-mark" src="/logo.svg" alt="" /><span
+            >行程手记<small>LEAPMOTOR C11</small></span
+          ></a
+        >
+        <nav class="primary-nav" aria-label="主要导航">
+          <button data-page="overview" class="active" aria-current="page">
+            <svg class="icon"><use href="#i-home" /></svg><span>总览</span>
+          </button>
+          <button data-page="energy">
+            <svg class="icon"><use href="#i-energy" /></svg><span>能耗</span>
+          </button>
+          <button data-page="records">
+            <svg class="icon"><use href="#i-record" /></svg><span>记录</span>
+          </button>
+          <button id="mobileUpload" class="nav-upload">
+            <svg class="icon"><use href="#i-plus" /></svg><span>记录一程</span>
+          </button>
+        </nav>
+        <div class="top-actions">
+          <button id="refreshButton" class="icon-button" aria-label="刷新数据">
+            <svg class="icon"><use href="#i-refresh" /></svg></button
+          ><button
+            id="settingsButton"
+            class="icon-button"
+            aria-label="外观与车库管理"
+          >
+            <svg class="icon"><use href="#i-settings" /></svg></button
+          ><button id="uploadButton" class="primary desktop-upload">
+            <svg class="icon"><use href="#i-plus" /></svg>记录一程
+          </button>
+        </div>
+      </header>
+      <main>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow" id="headingEyebrow">YOUR EVERYDAY JOURNEY</p>
+            <h1 id="pageTitle">每一程，都值得记录。</h1>
+            <p class="muted" id="pageSubtitle">
+              了解出行的节奏，也看见每一度电的去向。
+            </p>
+          </div>
+          <span class="sync-status" id="connection" role="status"
+            >正在连接车库</span
+          >
+        </div>
+        <div id="offlineBanner" class="notice" hidden>
+          连接暂时中断，当前显示上次获取的数据。<button
+            id="retryButton"
+            class="text-button"
+          >
+            重新连接
+          </button>
+        </div>
+        <button id="pendingBanner" class="pending-banner" hidden>
+          <span
+            >最近有 <strong id="pendingCount"></strong> 张截图待核对<span
+              class="muted"
+              >确认后才会计入统计</span
+            ></span
+          ><svg class="icon"><use href="#i-arrow" /></svg>
+        </button>
+        <section class="range-toolbar" aria-label="统计日期范围">
+          <div class="pills" id="ranges">
+            <button data-range="month" class="active">本月</button
+            ><button data-range="week">本周</button
+            ><button data-range="lastweek">上周</button
+            ><button data-range="lastmonth">上月</button
+            ><button data-range="all">全部</button
+            ><button data-range="custom">
+              <svg class="icon"><use href="#i-record" /></svg>自定义
+            </button>
+          </div>
+          <span class="range-caption" id="rangeDates"></span>
+        </section>
+        <div id="page-overview" class="page-content">
+          <div class="overview-grid">
+            <section class="panel distance-card">
+              <div class="section-head">
+                <p class="eyebrow" id="rangeLabel">本月里程</p>
+                <span class="small-tag">DISTANCE</span>
+              </div>
+              <p class="main-number">
+                <span id="total">—</span><small>km</small>
+              </p>
+              <p class="coverage" id="coverageText">等待记录</p>
+              <div class="stats">
+                <div><span>记录天数</span><strong id="days">—</strong></div>
+                <div>
+                  <span>日均里程 <small>km</small></span
+                  ><strong id="average">—</strong>
+                </div>
+                <div>
+                  <span>单日最高 <small>km</small></span
+                  ><strong id="maximum">—</strong>
+                </div>
+              </div>
+            </section>
+            <section class="vehicle-card">
+              <img src="/c11_hero.jpg" alt="零跑 C11" class="hero-image" />
+              <div class="vehicle-shade"></div>
+              <div class="vehicle-top">
+                <span class="vehicle-badge">我的座驾</span
+                ><span>LEAPMOTOR</span>
+              </div>
+              <div class="vehicle-bottom">
+                <div>
+                  <p>一路相伴</p>
+                  <h2>零跑 C11</h2>
+                </div>
+                <div class="odometer">
+                  <strong id="lifetimeTotal">—</strong
+                  ><span>累计已记录 · km</span>
+                </div>
+              </div>
+            </section>
+          </div>
+          <section class="panel chart-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">DISTANCE OVER TIME</p>
+                <h2>出行节奏</h2>
+              </div>
+              <div class="segments" id="views" aria-label="里程汇总方式">
+                <button data-view="daily" class="active">日</button
+                ><button data-view="weekly">周</button
+                ><button data-view="monthly">月</button>
+              </div>
+            </div>
+            <div
+              class="chart-readout"
+              id="mileageReadout"
+              aria-live="polite"
+            ></div>
+            <div class="chart-scroll">
+              <div id="mileageChart" class="interactive-chart"></div>
+            </div>
+            <div class="chart-footer">
+              <span
+                ><i class="legend-dot gold"></i>行驶里程
+                <i class="legend-dash"></i
+                ><span id="averageLegend">已记录日均</span></span
+              ><span id="chartNote">点按柱形，查看详情</span>
+            </div>
+          </section>
+          <div class="lower-grid">
+            <section class="panel calendar-panel">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">A LITTLE EVERY DAY</p>
+                  <h2>出行日历</h2>
+                </div>
+                <div class="calendar-controls">
+                  <button
+                    id="calendarPrev"
+                    class="icon-button"
+                    aria-label="上一个月"
+                  >
+                    ‹</button
+                  ><span id="calendarMonth"></span
+                  ><button
+                    id="calendarNext"
+                    class="icon-button"
+                    aria-label="下一个月"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>一</span><span>二</span><span>三</span><span>四</span
+                ><span>五</span><span>六</span><span>日</span>
+              </div>
+              <div id="calendarGrid" class="calendar-grid"></div>
+              <div
+                class="calendar-detail"
+                id="calendarDetail"
+                aria-live="polite"
+              ></div>
+              <p class="muted calendar-legend">
+                <span>里程</span><i class="heat one"></i><i class="heat two"></i
+                ><i class="heat three"></i><span>少 → 多</span
+                ><span>虚线为未记录</span>
+              </p>
+              <p class="muted">月历独立按自然月浏览。</p>
+            </section>
+            <section class="panel insight-panel">
+              <p class="eyebrow">A CLOSER LOOK</p>
+              <h2>关于这段旅程</h2>
+              <div id="insights"></div>
+              <button class="text-button arrow-link" data-go="energy">
+                查看能耗详情 <svg class="icon"><use href="#i-arrow" /></svg>
+              </button>
+            </section>
+          </div>
+        </div>
+        <div id="page-energy" class="page-content" hidden>
+          <section class="panel energy-summary">
+            <div>
+              <p class="eyebrow">最新相交周期 · 百公里能耗</p>
+              <p class="main-number">
+                <span id="latestEnergy">—</span><small>kWh / 100km</small>
+              </p>
+              <p class="muted" id="latestEnergyPeriod"></p>
+            </div>
+            <div class="energy-change" id="energyChange"></div>
+          </section>
+          <section class="panel chart-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">LESS ENERGY, MORE JOURNEY</p>
+                <h2>每周能耗趋势</h2>
+              </div>
+              <span class="small-tag">数值越低，用电越省</span>
+            </div>
+            <div
+              id="weeklyReadout"
+              class="chart-readout"
+              aria-live="polite"
+            ></div>
+            <div class="chart-scroll">
+              <div
+                id="weeklyChart"
+                class="interactive-chart energy-chart"
+              ></div>
+            </div>
+            <div class="chart-footer">
+              <span><i class="legend-dot green"></i>kWh / 100km</span
+              ><span id="weeklyNote"></span>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">WHERE THE ENERGY GOES</p>
+                <h2>电量用在哪里</h2>
+              </div>
+              <label class="inline-select"
+                ><span class="sr-only">能耗构成周期</span
+                ><select id="energyPeriod"></select
+              ></label>
+            </div>
+            <div id="energyBreakdown" class="breakdown-grid"></div>
+            <p class="muted">
+              展示与所选日期相交的完整周期；电量来自截图，不通过里程估算。
+            </p>
+          </section>
+        </div>
+        <div id="page-records" class="page-content" hidden>
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">YOUR JOURNEY ARCHIVE</p>
+                <h2>
+                  每日记录 <span class="count-tag" id="recordCount">0</span>
+                </h2>
+              </div>
+              <button id="exportButton" class="text-button">
+                导出全部数据 ↓
+              </button>
+            </div>
+            <p class="muted">点开一行查看详情。未记录的日期不计作 0 km。</p>
+            <div id="dailyRows" class="record-list"></div>
+            <button id="moreRecords" class="secondary full-width" hidden>
+              加载更多
+            </button>
+          </section>
+        </div>
+        <footer>
+          <span>数据留在你的车库里。</span><span id="buildLabel"></span>
+        </footer>
+      </main>
+    </div>
+    <div id="toast" role="status" hidden></div>
+    <dialog id="loginDialog" aria-labelledby="loginTitle">
+      <form id="loginForm">
+        <img class="brand-mark large" src="/logo.svg" alt="" />
+        <p class="eyebrow">WELCOME HOME</p>
+        <h2 id="loginTitle">欢迎回到你的车库</h2>
+        <p class="muted">输入访问密钥，继续记录你的每一程。</p>
+        <label
+          >访问密钥<input
+            id="tokenInput"
+            type="password"
+            required
+            autocomplete="current-password"
+            placeholder="输入部署时设置的密钥" /></label
+        ><label class="checkbox"
+          ><input id="rememberToken" type="checkbox" />在此设备记住我</label
+        ><button class="primary full-width" type="submit">进入车库 →</button>
+        <p id="loginError" class="error" role="alert"></p>
+      </form>
+    </dialog>
+    <dialog id="dateDialog" aria-labelledby="dateTitle">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">MAKE IT YOURS</p>
+          <h2 id="dateTitle">选择一段旅程</h2>
+        </div>
+        <button
+          data-close="dateDialog"
+          class="icon-button"
+          aria-label="关闭日期选择"
+        >
+          ×
+        </button>
+      </div>
+      <div class="date-fields">
+        <label>开始日期<input id="startDate" type="date" required /></label
+        ><label>结束日期<input id="endDate" type="date" required /></label>
+      </div>
+      <p id="dateError" class="error" role="alert"></p>
+      <button id="applyDates" class="primary full-width">查看这段时间</button>
+    </dialog>
+    <dialog id="uploadDialog" aria-labelledby="uploadTitle">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">ADD A NEW MEMORY</p>
+          <h2 id="uploadTitle">记录新一程</h2>
+        </div>
+        <button
+          data-close="uploadDialog"
+          class="icon-button"
+          aria-label="关闭上传"
+        >
+          ×
+        </button>
+      </div>
+      <ol class="upload-steps">
+        <li class="active">选择截图</li>
+        <li>识别校验</li>
+        <li>计入手记</li>
+      </ol>
+      <form id="uploadForm">
+        <label class="drop-area"
+          ><span class="upload-symbol"
+            ><svg class="icon"><use href="#i-upload" /></svg></span
+          ><strong id="fileLabel">选择里程能耗截图</strong
+          ><span>截图在本机识别，支持 PNG / JPG / WebP</span
+          ><input
+            id="screenshotFile"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            required /></label
+        ><img
+          id="uploadPreview"
+          class="upload-preview"
+          alt="所选截图预览"
+          hidden
+        /><label
+          >截图拍摄日期<input
+            id="captureDate"
+            name="captured_date"
+            type="date"
+            required
+        /></label>
+        <p class="muted">
+          按北京时间记录。上传旧截图时，请选择截图当天的日期。
+        </p>
+        <button class="primary full-width" id="submitUpload">
+          <svg class="icon"><use href="#i-plus" /></svg>开始识别
+        </button>
+      </form>
+      <div id="uploadResult" class="result" role="status"></div>
+    </dialog>
+    <dialog id="adminDialog" aria-labelledby="adminTitle">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">YOUR GARAGE</p>
+          <h2 id="adminTitle">偏好与管理</h2>
+        </div>
+        <button
+          data-close="adminDialog"
+          class="icon-button"
+          aria-label="关闭管理"
+        >
+          ×
+        </button>
+      </div>
+      <h3>外观</h3>
+      <div class="theme-options" aria-label="外观模式">
+        <button data-theme-choice="system">◐<span>跟随系统</span></button
+        ><button data-theme-choice="light">☀<span>浅色</span></button
+        ><button data-theme-choice="dark">☾<span>深色</span></button>
+      </div>
+      <p class="muted">跟随 iPhone 的浅色与深色模式，切换后即时生效。</p>
+      <div class="section-head settings-section">
+        <h3>数据备份</h3>
+        <button id="backupButton" class="secondary">立即备份</button>
+      </div>
+      <p class="muted">默认每天凌晨 3 点备份，保留 90 天。</p>
+      <div id="backupList"></div>
+      <h3 id="screenshotsHeading">截图与待确认记录</h3>
+      <div id="screenshotList"></div>
+      <details>
+        <summary>查看最近操作</summary>
+        <div id="logList" class="muted"></div>
+      </details>
+      <button id="logoutButton" class="danger-button full-width">
+        退出此设备
+      </button>
+    </dialog>
+    <dialog id="reviewDialog" class="wide-dialog" aria-labelledby="reviewTitle">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">ONE LAST LOOK</p>
+          <h2 id="reviewTitle">核对这次记录</h2>
+        </div>
+        <button
+          data-close="reviewDialog"
+          class="icon-button"
+          aria-label="关闭核对"
+        >
+          ×
+        </button>
+      </div>
+      <p class="notice" id="reviewWarnings"></p>
+      <div class="review-layout">
+        <img id="reviewImage" alt="待核对截图" />
+        <form id="reviewFields"></form>
+      </div>
+      <p class="muted">
+        仅合并下方记录，不删除历史数据。超过 20% 偏差的周能耗仍保留旧值。
+      </p>
+      <details id="advancedReview">
+        <summary>高级：编辑原始数据</summary>
+        <label
+          >JSON<textarea
+            id="reviewData"
+            rows="12"
+            spellcheck="false"
+          ></textarea></label
+        ><button id="applyReviewJson" class="secondary">应用到表单</button>
+      </details>
+      <button id="confirmButton" class="primary full-width">
+        确认，计入手记
+      </button>
+      <p id="reviewResult" class="result" role="status"></p>
+    </dialog>
+    <dialog id="dayDialog" aria-labelledby="dayTitle">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">A DAY ON THE ROAD</p>
+          <h2 id="dayTitle"></h2>
+        </div>
+        <button
+          data-close="dayDialog"
+          class="icon-button"
+          aria-label="关闭日期详情"
+        >
+          ×
+        </button>
+      </div>
+      <div id="dayDetail"></div>
+      <button id="dayUpload" class="primary full-width">
+        补充这一天的截图
+      </button>
+    </dialog>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+.git
+.env
+.venv
+data
+certs
+tests
+test-results
+__pycache__
+*.zip
