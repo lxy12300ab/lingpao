@@ -81,6 +81,7 @@ function notify(message) {
   notify.timer = setTimeout(() => ($("toast").hidden = true), 5500);
 }
 function showDialog(id) {
+  if (id === "uploadDialog" && uploadEntry) return;
   if (!$(id).open) $(id).showModal();
 }
 function empty(target, title, description) {
@@ -1290,6 +1291,9 @@ async function openReview(s) {
 function continueUploadEntry() {
   if (!pendingUploadEntry || !token || busy || document.querySelector("dialog[open]")) return;
   pendingUploadEntry = false;
+  // The standalone form is usable while the initial data request is in flight.
+  // Never reset a screenshot the user selected before that request completed.
+  if (uploadEntry && $("screenshotFile").files.length) return;
   openUpload();
 }
 function openUpload() {
@@ -1364,6 +1368,12 @@ document.querySelectorAll("[data-close]").forEach(
       $(b.dataset.close).close();
     }),
 );
+document.querySelectorAll("[data-home]").forEach((button) => {
+  button.onclick = () => {
+    if (busy) return notify("正在识别，请稍候。");
+    location.assign("/");
+  };
+});
 document.querySelectorAll("dialog").forEach((dialog) =>
   dialog.addEventListener("cancel", (event) => {
     if (busy) event.preventDefault();
@@ -1634,6 +1644,10 @@ $("refreshButton").onclick = $("retryButton").onclick = () =>
 $("buildLabel").textContent = "行程手记 · " + BUILD;
 $("startDate").value = today().slice(0, 7) + "-01";
 $("endDate").value = today();
+if (uploadEntry) {
+  $("captureDate").value = today();
+  $("captureDate").max = today();
+}
 syncThemeButtons();
 render();
 checkVersion();
@@ -1650,7 +1664,7 @@ document.addEventListener("visibilitychange", resume);
 window.addEventListener("pageshow", (event) => {
   checkVersion();
   // Restored navigation may reuse the document; never reset a selected screenshot.
-  if (event.persisted && uploadEntry && !busy && !document.querySelector("dialog[open]")) {
+  if (event.persisted && uploadEntry && !busy && !$("screenshotFile").files.length && !document.querySelector("dialog[open]")) {
     pendingUploadEntry = true;
     if (token) refresh().then(continueUploadEntry).catch(() => {});
     else showDialog("loginDialog");

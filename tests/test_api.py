@@ -20,6 +20,10 @@ def test_auth_cache_health_export_and_backup(storage):
             assert entry.status_code == 200
             assert 'no-store' in entry.headers['cache-control']
             assert 'uploadDialog' in entry.text and '__BUILD__' not in entry.text
+            assert '<main id="uploadDialog"' in entry.text
+            assert 'href="/upload.webmanifest"' in entry.text
+        assert client.get('/upload.webmanifest').json()['start_url'] == '/upload'
+        assert '<dialog id="uploadDialog"' in client.get('/').text
         result=client.post('/api/admin/backup').json()
         assert result['bytes']>0
         assert client.get('/api/admin/backups').json()[0]['filename']==result['filename']

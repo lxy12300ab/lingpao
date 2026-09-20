@@ -2,7 +2,7 @@ import asyncio
 import os
 import threading
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from . import config, db, tasks
@@ -61,8 +61,21 @@ def version():
 @app.get('/index.html')
 @app.get('/upload')
 @app.get('/upload/')
-def index():
+def index(request: Request):
     content = (config.ROOT/'static'/'index.html').read_text().replace('__BUILD__',config.BUILD)
+    if request.url.path.rstrip('/') == '/upload' or request.query_params.get('action') == 'upload':
+        content = content.replace('<body>', '<body class="upload-page">')
+        content = content.replace('href="/manifest.webmanifest"', 'href="/upload.webmanifest"')
+        content = content.replace('content="行程手记"', 'content="记录里程"')
+        content = content.replace('<title>行程手记 · 零跑 C11</title>', '<title>记录里程 · 零跑 C11</title>')
+        start = content.index('<dialog id="uploadDialog"')
+        end = content.index('</dialog>', start)
+        section = content[start:end].replace('<dialog id="uploadDialog"', '<main id="uploadDialog"', 1)
+        section = section.replace('data-close="uploadDialog"', 'data-home="true"')
+        section = section.replace('aria-label="关闭上传"', 'aria-label="返回行程总览"')
+        section = section.replace('          ×', '          ←')
+        section = section.replace('记录新一程</h2>', '记录里程</h2>')
+        content = content[:start] + section + '<p class="upload-home"><a href="/">查看行程总览 →</a></p></main>' + content[end+len('</dialog>'):]
     return HTMLResponse(content)
 
 app.mount('/', StaticFiles(directory=config.ROOT/'static'), name='static')
