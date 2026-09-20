@@ -15,6 +15,11 @@ def test_auth_cache_health_export_and_backup(storage):
         r=client.get('/')
         assert 'no-store' in r.headers['cache-control'] and '__BUILD__' not in r.text
         assert client.get('/api/version').json()['build']==config.BUILD
+        for path in ['/upload', '/upload/', '/?action=upload']:
+            entry = client.get(path)
+            assert entry.status_code == 200
+            assert 'no-store' in entry.headers['cache-control']
+            assert 'uploadDialog' in entry.text and '__BUILD__' not in entry.text
         result=client.post('/api/admin/backup').json()
         assert result['bytes']>0
         assert client.get('/api/admin/backups').json()[0]['filename']==result['filename']

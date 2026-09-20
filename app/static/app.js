@@ -1,6 +1,9 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 const BUILD = document.querySelector('meta[name="build"]').content;
+const uploadEntry = /^\/upload\/?$/.test(location.pathname) ||
+  new URLSearchParams(location.search).get("action") === "upload";
+let pendingUploadEntry = uploadEntry;
 const storage = {
   get(key) {
     try {
@@ -1284,9 +1287,15 @@ async function openReview(s) {
   );
   showDialog("reviewDialog");
 }
+function continueUploadEntry() {
+  if (!pendingUploadEntry || !token || busy || document.querySelector("dialog[open]")) return;
+  pendingUploadEntry = false;
+  openUpload();
+}
 function openUpload() {
   if (busy) return;
   if (!token) {
+    pendingUploadEntry = true;
     showDialog("loginDialog");
     return;
   }
@@ -1338,6 +1347,7 @@ $("loginForm").onsubmit = async (e) => {
     $("tokenInput").value = "";
     $("loginError").textContent = "";
     $("loginDialog").close();
+    continueUploadEntry();
   } catch (error) {
     $("loginError").textContent = error.message;
   } finally {
@@ -1620,24 +1630,32 @@ $("logoutButton").onclick = () => {
   showDialog("loginDialog");
 };
 $("refreshButton").onclick = $("retryButton").onclick = () =>
-  refresh().catch((e) => notify(e.message));
+  refresh().then(continueUploadEntry).catch((e) => notify(e.message));
 $("buildLabel").textContent = "行程手记 · " + BUILD;
 $("startDate").value = today().slice(0, 7) + "-01";
 $("endDate").value = today();
 syncThemeButtons();
 render();
 checkVersion();
-if (token) refresh().catch(() => {});
+if (token) refresh().then(continueUploadEntry).catch(() => {});
 else showDialog("loginDialog");
 // Live data stays in memory only; no service worker or offline cache.
 function resume() {
   if (!document.hidden) {
     checkVersion();
-    if (token && !busy) refresh().catch(() => {});
+    if (token && !busy) refresh().then(continueUploadEntry).catch(() => {});
   }
 }
 document.addEventListener("visibilitychange", resume);
-window.addEventListener("pageshow", () => checkVersion());
+window.addEventListener("pageshow", (event) => {
+  checkVersion();
+  // Restored navigation may reuse the document; never reset a selected screenshot.
+  if (event.persisted && uploadEntry && !busy && !document.querySelector("dialog[open]")) {
+    pendingUploadEntry = true;
+    if (token) refresh().then(continueUploadEntry).catch(() => {});
+    else showDialog("loginDialog");
+  }
+});
 setInterval(resume, 60000);
 let resizeTimer;
 window.addEventListener("resize", () => {

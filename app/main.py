@@ -59,6 +59,8 @@ def version():
 
 @app.get('/')
 @app.get('/index.html')
+@app.get('/upload')
+@app.get('/upload/')
 def index():
     content = (config.ROOT/'static'/'index.html').read_text().replace('__BUILD__',config.BUILD)
     return HTMLResponse(content)
