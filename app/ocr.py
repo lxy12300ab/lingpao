@@ -54,6 +54,17 @@ def crop(image, box):
     x1, y1, x2, y2 = box
     return image.crop((max(0, int(x1)), max(0, int(y1)), min(image.width, int(x2)), min(image.height, int(y2))))
 
+def read_number_region(image, label, maximum=21000):
+    """Require repeated pixel readings, independently of any expected sum."""
+    pad = max(4, image.width*.006)
+    region = crop(image, (label['x']-pad, label['y']-pad,
+                          label['x']+label['w']+pad, label['y']+label['h']+pad))
+    readings = [text(region, 'eng', psm, '0123456789.') for psm in (7, 8, 13)]
+    votes = Counter(float(s) for s in readings
+                    if re.fullmatch(r'\d{1,5}(?:\.\d{1,2})?', s) and 0 <= float(s) <= maximum)
+    agreed = [value for value, count in votes.items() if count >= 2]
+    return (agreed[0] if len(agreed) == 1 else None), readings
+
 def retry_daily_label(image, labels, center, step):
     """Retry one localized numeric label; never reconstruct it from the total."""
     nearby = [t for t in labels
@@ -62,14 +73,7 @@ def retry_daily_label(image, labels, center, step):
               and 0 < t['w'] < step*.8 and 0 < t['h'] < image.width*.08]
     if len(nearby) != 1:
         return None, []
-    t = nearby[0]
-    pad = max(4, image.width*.006)
-    region = crop(image, (t['x']-pad, t['y']-pad,
-                          t['x']+t['w']+pad, t['y']+t['h']+pad))
-    readings = [text(region, 'eng', psm, '0123456789.') for psm in (7, 8, 13)]
-    votes = Counter(float(s) for s in readings if NUMBER.fullmatch(s) and 0 <= float(s) <= 3000)
-    agreed = [value for value, count in votes.items() if count >= 2]
-    return (agreed[0] if len(agreed) == 1 else None), readings
+    return read_number_region(image, nearby[0], 3000)
 
 def recognize(path, captured: date):
     with Image.open(path) as src:
@@ -127,7 +131,10 @@ def recognize(path, captured: date):
                   and abs(t['y']+t['h']/2 - km['y']-km['h']/2) < w*.04]
         if len(totals) != 1:
             raise ValueError('近7天总里程无法唯一识别')
-        total = float(totals[0]['text'])
+        total, readings = read_number_region(image, totals[0])
+        evidence['daily_total_ocr'] = {'original': totals[0]['text'], 'readings': readings, 'accepted': total}
+        if total is None:
+            raise ValueError('近7天总里程需核对：局部数字识别不一致，未用每日合计推测总数')
         candidates = [t for t in ts+tokens(image,enhance=False) if NUMBER.fullmatch(t['text']) and t['conf'] >= 85
                       and km['y']+km['h']+w*.04 < t['y'] < axis_y-w*.03]
         groups = [[] for _ in range(7)]
@@ -181,12 +188,21 @@ def recognize(path, captured: date):
         selected_period = period_for(label['text'], captured)
         percentages = sorted([t for t in ts if re.fullmatch(r'\d+(?:\.\d+)?%', t['text'])
                               and label['y'] < t['y'] < label['y']+w*.4], key=lambda t: t['y'])
-        totals = [t for t in ts if NUMBER.fullmatch(t['text']) and t['x'] < w*.5
+        totals = [t for t in ts if re.search(r'\d', t['text']) and t['x'] < w*.5
                   and label['y']+w*.05 < t['y'] < label['y']+w*.3 and t['h'] > w*.035]
+        if len(percentages) != 3:
+            y0 = label['y']
+            localized = tokens(crop(image, (w*.55, y0, w, y0+w*.4)), 'eng', 6)
+            percentages = sorted([t for t in localized if re.fullmatch(r'\d+(?:\.\d+)?%', t['text'])],
+                                 key=lambda t: t['y'])
         if len(percentages) != 3 or len(totals) != 1:
             raise ValueError('能耗总数或三个占比识别不完整')
+        energy_total, readings = read_number_region(image, totals[0], 10000)
+        evidence['energy_total_ocr'] = {'original': totals[0]['text'], 'readings': readings, 'accepted': energy_total}
+        if energy_total is None:
+            raise ValueError('总能耗局部识别不一致，请核对 kWh 数值')
         pcts = [float(t['text'][:-1]) for t in percentages]
-        entry = {'period': selected_period, 'totalKwh': float(totals[0]['text']),
+        entry = {'period': selected_period, 'totalKwh': energy_total,
                  'drive': pcts[0], 'ac': pcts[1], 'other': pcts[2]}
         Dataset(energy=[entry])
         output['energy'] = [entry]
@@ -197,7 +213,7 @@ def recognize(path, captured: date):
         if len(period_tokens) != 1:
             raise ValueError('缺少周能耗区域锚点')
         label_y = period_tokens[0]['y']
-        bars = sorted([t for t in ts if re.fullmatch(r'\d{1,2}\.\d{1,2}', t['text'])
+        bars = sorted([t for t in ts if re.fullmatch(r'\d{1,2}(?:\.\d{1,2})?', t['text'])
                        and 1 <= float(t['text']) <= 50 and w*.2 < t['y'] < label_y-w*.12
                        and t['conf'] >= 65], key=lambda t: t['x'])
         if len(bars) != 6:
@@ -227,4 +243,4 @@ def recognize(path, captured: date):
     except ValueError as exc:
         warnings.append(f'周能耗：{exc}')
     return {'data': Dataset(**output).model_dump(mode='json'), 'warnings': warnings, 'evidence': evidence,
-            'captured_date': captured.isoformat(), 'engine': 'tesseract-chi_sim+eng-v2'}
+            'captured_date': captured.isoformat(), 'engine': 'tesseract-chi_sim+eng-v3'}

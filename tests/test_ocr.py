@@ -28,7 +28,7 @@ def test_september20_regression(monkeypatch):
     assert result['data']['energy'][0]['totalKwh'] == 68.1
     original = ocr.text
     def disagreement(image, lang='chi_sim+eng', psm=6, whitelist=None):
-        if lang == 'eng' and psm in (7,8,13):
+        if lang == 'eng' and psm in (7,8,13) and image.width < 100:
             return str(psm)
         return original(image, lang, psm, whitelist)
     monkeypatch.setattr(ocr, 'text', disagreement)
@@ -36,10 +36,37 @@ def test_september20_regression(monkeypatch):
     assert uncertain['data']['daily'] == []
     assert '2026-09-16' in uncertain['warnings'][0] and '2026-09-17' in uncertain['warnings'][0]
     monkeypatch.setattr(ocr, 'text', lambda image,lang='chi_sim+eng',psm=6,whitelist=None:
-                        '999' if lang=='eng' and psm in (7,8,13) else original(image,lang,psm,whitelist))
+                        '999' if lang=='eng' and psm in (7,8,13) and image.width < 100 else original(image,lang,psm,whitelist))
     mismatch = recognize(path, date(2026,9,20))
     assert mismatch['data']['daily'] == []
     assert '总里程不符' in mismatch['warnings'][0]
+
+@pytest.mark.skipif(not os.getenv('OCR_FIXTURE_SEP21'), reason='Private screenshot path supplied externally')
+def test_september21_totals_integer_week_and_percentages(monkeypatch):
+    path = Path(os.environ['OCR_FIXTURE_SEP21'])
+    original_tokens = ocr.tokens
+    def nas_misread(image, *args, **kwargs):
+        rows = original_tokens(image, *args, **kwargs)
+        if image.width == 1320 and image.height > 2000:
+            rows = [dict(t, text='3771') if t['text']=='371' else t
+                    for t in rows if t['text'] != '2.31%']
+        return rows
+    monkeypatch.setattr(ocr, 'tokens', nas_misread)
+    result = recognize(path, date(2026,9,21))
+    assert result['warnings'] == []
+    assert result['evidence']['daily_total_ocr']['original'] == '3771'
+    assert result['evidence']['daily_total'] == result['evidence']['daily_sum'] == 371
+    assert [r['km'] for r in result['data']['daily']] == [73,75,77,73,0,73,0]
+    assert [r['value'] for r in result['data']['weekly']] == [17.6,14.2,13.6,13.8,13.7,12]
+    assert result['data']['weekly'][-1]['period'] == '2026/09/14 - 2026/09/20'
+    assert result['data']['energy'] == [{'period':'2026/09/14 - 2026/09/20',
+        'totalKwh':51.9,'drive':89.21,'ac':2.31,'other':8.48}]
+    original_read = ocr.read_number_region
+    monkeypatch.setattr(ocr, 'read_number_region', lambda image,label,maximum=21000:
+        (None, ['371','3771','31']) if label['text']=='3771' else original_read(image,label,maximum))
+    uncertain = recognize(path, date(2026,9,21))
+    assert uncertain['data']['daily'] == []
+    assert '未用每日合计推测总数' in uncertain['warnings'][0]
 
 def test_new_year_period():
     assert period_for('12/29-1/4',date(2026,1,5))=='2025/12/29 - 2026/01/04'
