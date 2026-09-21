@@ -95,7 +95,32 @@ def confirm(sid: int, dataset: Dataset):
     with db.connect() as c:
         if not c.execute('SELECT id FROM screenshots WHERE id=?',(sid,)).fetchone():
             raise HTTPException(404,'截图不存在')
-    return service.review(sid, dataset)
+    try:
+        return service.review(sid, dataset)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+@router.post('/screenshots/{sid}/dismiss')
+def dismiss(sid: int):
+    return change_review_status(sid, 'review', 'dismissed')
+
+@router.post('/screenshots/{sid}/restore')
+def restore_review(sid: int):
+    return change_review_status(sid, 'dismissed', 'review')
+
+def change_review_status(sid, expected, target):
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        row = c.execute('SELECT ocr_status FROM screenshots WHERE id=?', (sid,)).fetchone()
+        if not row:
+            raise HTTPException(404, '截图不存在')
+        if row['ocr_status'] == target:
+            return {'status': target}
+        if row['ocr_status'] != expected:
+            raise HTTPException(409, '记录状态已变化，请刷新后重试')
+        c.execute('UPDATE screenshots SET ocr_status=? WHERE id=?', (target, sid))
+        db.log(c, 'screenshot_status', sid, target, '忽略或恢复待核对截图；统计数据不变')
+    return {'status': target}
 
 @router.post('/admin/backup')
 def manual_backup():

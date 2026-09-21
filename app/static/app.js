@@ -1026,6 +1026,23 @@ function syncThemeButtons() {
     b.setAttribute("aria-pressed", String(active));
   });
 }
+async function changeScreenshotStatus(ids, action) {
+  if (busy) return;
+  if (!confirm(action === "dismiss"
+    ? `忽略这 ${ids.length} 条待核对记录？不再提醒，保留截图，不修改统计，可随时恢复。`
+    : "恢复为待核对记录？")) return;
+  busy = true;
+  try {
+    for (const id of ids) await api(`/api/screenshots/${id}/${action}`, { method: "POST" });
+    notify(action === "dismiss" ? "已忽略，统计数据未改变" : "已恢复待核对");
+  } catch (e) {
+    notify(e.message);
+  } finally {
+    busy = false;
+    await refresh();
+    await loadAdmin();
+  }
+}
 async function loadAdmin() {
   const [backups, screenshots, logs] = await Promise.all(
     ["/api/admin/backups", "/api/screenshots", "/api/admin/logs"].map(
@@ -1060,9 +1077,17 @@ async function loadAdmin() {
       ),
     );
   $("screenshotList").replaceChildren();
+  const emptyReviews = screenshots.filter(s => s.ocr_status === "review" &&
+    ["daily", "weekly", "energy"].every(k => !(s.ocr_result?.data?.[k]?.length)));
+  if (emptyReviews.length) {
+    const clear = node("button", "secondary", `忽略空记录（${emptyReviews.length} 条）`);
+    clear.onclick = () => changeScreenshotStatus(emptyReviews.map(s => s.id), "dismiss");
+    $("screenshotList").append(clear);
+  }
   const labels = {
     done: "已计入手记",
     review: "待确认",
+    dismissed: "已忽略 · 不再提醒",
     failed: "识别失败",
     confirmed: "已核对",
     processing: "正在识别",
@@ -1089,6 +1114,13 @@ async function loadAdmin() {
     );
     row.append(text, button);
     button.onclick = () => openReview(s).catch((e) => notify(e.message));
+    if (["review", "dismissed"].includes(s.ocr_status)) {
+      const ignored = s.ocr_status === "dismissed";
+      const action = node("button", "secondary", ignored ? "恢复待核对" : "忽略");
+      action.onclick = () => changeScreenshotStatus([s.id], ignored ? "restore" : "dismiss");
+      row.append(action);
+      if (ignored) button.remove();
+    }
     $("screenshotList").append(row);
   });
   if (!screenshots.length)

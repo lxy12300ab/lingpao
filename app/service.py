@@ -55,9 +55,12 @@ def process_file(path: Path, captured: date):
 def review(sid, dataset):
     with db.connect() as c:
         result = db.merge(c, dataset, sid, source='review')
-        row = c.execute('SELECT ocr_result FROM screenshots WHERE id=?', (sid,)).fetchone()
+        row = c.execute('SELECT ocr_result,ocr_status FROM screenshots WHERE id=?', (sid,)).fetchone()
         if not row:
             raise LookupError('截图不存在')
+        if row['ocr_status'] == 'dismissed':
+            # The exception rolls back the merge in this write transaction.
+            raise ValueError('此截图已忽略，请先恢复待核对')
         payload = json.loads(row['ocr_result'] or '{}')
         payload['confirmed_data'] = dataset.model_dump(mode='json')
         payload['merge'] = result
