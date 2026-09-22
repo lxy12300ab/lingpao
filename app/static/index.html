@@ -534,10 +534,13 @@
       <div id="dayDetail"></div>
       <form id="dayEditForm">
         <label for="dayKm">当天行驶里程（km）</label>
-        <input id="dayKm" type="number" inputmode="decimal" min="0" max="3000" step="any" required aria-describedby="dayEditHint dayEditError" />
+        <input id="dayKm" type="number" inputmode="decimal" min="0" max="3000" step="any" aria-describedby="dayEditHint dayEditError" />
         <p id="dayEditHint" class="muted">可补录，也可调大或调小。0 表示当天未行驶；手动保存后，截图识别不会覆盖此值。</p>
         <p id="dayEditError" role="alert"></p>
-        <button id="daySave" type="submit" class="primary full-width">保存里程</button>
+        <label for="dayNote">这一天的记录</label>
+        <textarea id="dayNote" rows="5" maxlength="2000" placeholder="去了哪里，做了什么？记下这一天的小事……"></textarea>
+        <p class="muted">最多 2000 字；没有里程也可以写。截图识别不会覆盖文字，清空文字后保存即可移除。</p>
+        <button id="daySave" type="submit" class="primary full-width">保存当天记录</button>
       </form>
       <button id="dayUpload" class="primary full-width">
         补充这一天的截图

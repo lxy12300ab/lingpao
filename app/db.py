@@ -38,6 +38,9 @@ def init():
         CREATE TABLE IF NOT EXISTS upload_log (
           id INTEGER PRIMARY KEY, action TEXT, target TEXT, status TEXT, message TEXT, created_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS daily_notes (
+          date TEXT PRIMARY KEY, note TEXT NOT NULL,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
         PRAGMA user_version=1;
         ''')
 

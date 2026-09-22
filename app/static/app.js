@@ -21,6 +21,7 @@ const storage = {
 };
 let token = storage.get("leapToken"),
   data = { daily: [], weekly: [], energy: [] };
+let dailyNotes = [];
 let range = "month",
   view = "daily",
   pageName = "overview",
@@ -545,6 +546,10 @@ function renderCalendar() {
     b.append(node("span", "calendar-day", n),
       node("strong", "calendar-km", future ? "—" : value === undefined ? "待补" : num(value)));
     b.type = "button";
+    if (dailyNotes.some(r => r.date === date && r.note)) {
+      b.append(node("span", "calendar-note", "✎"));
+      b.title = "有文字记录，点击查看";
+    }
     b.disabled = future;
     b.dataset.date = date;
     b.setAttribute(
@@ -557,6 +562,8 @@ function renderCalendar() {
             ? "未记录"
             : num(value) + " 公里"),
     );
+    if (dailyNotes.some(r => r.date === date && r.note))
+      b.setAttribute("aria-label", b.getAttribute("aria-label") + "，有文字记录");
     b.classList.toggle("selected", date === calendarSelection);
     b.onclick = () => {
       calendarSelection = date;
@@ -923,6 +930,8 @@ function openDay(date) {
   const row = data.daily.find((r) => r.date === date);
   $("dayKm").value = row ? row.km : "";
   $("dayKm").dataset.previous = row ? String(row.km) : "";
+  $("dayNote").value = dailyNotes.find(r => r.date === date)?.note || "";
+  $("dayNote").dataset.previous = $("dayNote").value;
   $("dayEditError").textContent = "";
   $("dayTitle").textContent = fullDate(date);
   const target = $("dayDetail");
@@ -952,6 +961,7 @@ async function refresh() {
   $("refreshButton").disabled = true;
   try {
     const payload = await (await api("/api/data")).json();
+    dailyNotes = await (await api("/api/notes")).json();
     data = {
       daily: payload.daily.slice().sort((a, b) => a.date.localeCompare(b.date)),
       weekly: payload.weekly
@@ -1490,22 +1500,25 @@ $("mileageLatest").onclick = () => {
 $("dayEditForm").onsubmit = async (event) => {
   event.preventDefault();
   if (busy || !$("dayEditForm").reportValidity()) return;
-  const km = Number($("dayKm").value);
-  if ($("dayKm").value.trim() === "" || !Number.isFinite(km) || km < 0 || km > 3000) return;
+  const km = $("dayKm").value.trim() === "" ? null : Number($("dayKm").value);
+  if (km !== null && (!Number.isFinite(km) || km < 0 || km > 3000)) return;
   busy = true;
   $("daySave").disabled = true;
   $("dayEditError").textContent = "";
   try {
     const saved = await (await api("/api/daily/" + daySelected, {
       method: "PUT", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({km, expected_km: $("dayKm").dataset.previous === "" ? null : Number($("dayKm").dataset.previous)}),
+      body: JSON.stringify({km, expected_km: $("dayKm").dataset.previous === "" ? null : Number($("dayKm").dataset.previous),
+        note: $("dayNote").value, expected_note: $("dayNote").dataset.previous}),
     })).json();
-    data.daily = data.daily.filter(r => r.date !== saved.date).concat(saved).sort((a,b) => a.date.localeCompare(b.date));
+    if (saved.km !== null) data.daily = data.daily.filter(r => r.date !== saved.date).concat({date: saved.date, km: saved.km}).sort((a,b) => a.date.localeCompare(b.date));
+    dailyNotes = dailyNotes.filter(r => r.date !== saved.date);
+    if (saved.note) dailyNotes.push({date: saved.date, note: saved.note});
     selectedMileage = "";
     mileagePage = 0;
     render();
     $("dayDialog").close();
-    notify("里程已保存，统计与图表已更新");
+    notify("当天记录已保存");
   } catch (error) {
     $("dayEditError").textContent = error.message;
   } finally {

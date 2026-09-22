@@ -36,14 +36,37 @@ def edit_daily(day: date, body: ManualMileage):
         previous = old['km'] if old else None
         if previous != body.expected_km:
             raise HTTPException(409, '这一天的数据已变化，请刷新页面后重新修改')
+        if body.km is None and previous is not None:
+            raise HTTPException(422, '已有里程不能留空；未行驶请填写 0')
         stamp = config.now()
-        c.execute("""INSERT INTO daily_mileage(date,km,source,created_at,updated_at)
+        if body.note is not None:
+            old_note = c.execute('SELECT note FROM daily_notes WHERE date=?', (key,)).fetchone()
+            previous_note = old_note['note'] if old_note else ''
+            if body.expected_note != previous_note:
+                raise HTTPException(409, '这一天的文字记录已变化，请刷新后重新修改')
+            note = body.note.strip()
+            if note:
+                c.execute("""INSERT INTO daily_notes(date,note,created_at,updated_at) VALUES(?,?,?,?)
+                  ON CONFLICT(date) DO UPDATE SET note=excluded.note,updated_at=excluded.updated_at""",
+                          (key, note, stamp, stamp))
+            else:
+                c.execute('DELETE FROM daily_notes WHERE date=?', (key,))
+            if previous_note != note:
+                db.log(c, 'daily_note', key, 'ok', json.dumps(
+                    {'before': previous_note, 'after': note}, ensure_ascii=False))
+        if body.km is not None and (body.note is None or body.km != previous):
+            c.execute("""INSERT INTO daily_mileage(date,km,source,created_at,updated_at)
                      VALUES(?,?,'manual',?,?) ON CONFLICT(date) DO UPDATE SET
                      km=excluded.km,source='manual',screenshot_id=NULL,updated_at=excluded.updated_at""",
                   (key, body.km, stamp, stamp))
-        db.log(c, 'manual_daily', key, 'ok', json.dumps(
-            {'before': dict(old) if old else None, 'after': body.km}, ensure_ascii=False))
-    return {'date': key, 'km': body.km}
+            db.log(c, 'manual_daily', key, 'ok', json.dumps(
+                {'before': dict(old) if old else None, 'after': body.km}, ensure_ascii=False))
+    return {'date': key, 'km': body.km, 'note': body.note.strip() if body.note is not None else None}
+
+@router.get('/notes')
+def notes():
+    with db.connect() as c:
+        return [dict(r) for r in c.execute('SELECT date,note FROM daily_notes ORDER BY date')]
 
 @router.post('/upload')
 async def upload(file: UploadFile = File(...), captured_date: date = Form(...)):
