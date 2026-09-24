@@ -8,7 +8,7 @@ TZ = ZoneInfo('Asia/Shanghai')
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.getenv('DATA_DIR', str(ROOT.parent / 'data'))).resolve()
 DB = DATA / 'leap.db'
-BUILD = os.getenv('BUILD', '2026.09.24.1')
+BUILD = os.getenv('BUILD', '2026.09.24.2')
 if not re.fullmatch(r'[A-Za-z0-9._-]{1,80}', BUILD):
     raise ValueError('BUILD 只能使用字母、数字、点、横线和下划线')
 TOKEN = os.getenv('API_TOKEN', '')

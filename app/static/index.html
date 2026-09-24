@@ -131,12 +131,28 @@
           ><svg class="icon"><use href="#i-arrow" /></svg>
         </button>
         <section id="warrantyCard" class="panel warranty-card" hidden>
-          <div class="section-head"><h2>年度里程预警</h2><button id="warrantyEdit" class="secondary">仪表校准</button></div>
+          <div class="section-head"><div><p class="eyebrow">YOUR ANNUAL JOURNEY</p><h2>年度里程预警</h2></div><button id="warrantyEdit" class="secondary">校准</button></div>
           <p id="warrantyPeriod" class="muted"></p>
-          <p id="warrantyNumbers" class="warranty-numbers"></p>
+          <div class="warranty-layout">
+            <div><span id="warrantyBadge" class="warranty-badge"></span>
+              <p id="warrantyCaption" class="muted"></p>
+              <p class="warranty-numbers"><span id="warrantyNumbers"></span><small id="warrantyUnit"> km</small></p>
+              <p id="warrantyUsage" class="muted"></p>
+            </div>
+            <div id="warrantyBars">
+              <div class="warranty-bar-label"><label for="wMileage">里程额度已用</label><strong id="wMileageLabel"></strong></div>
+              <progress id="wMileage" max="100" value="0"></progress>
+              <div class="warranty-bar-label"><label for="wTime">年度时间已过</label><strong id="wTimeLabel"></strong></div>
+              <progress id="wTime" max="100" value="0"></progress>
+              <p id="warrantyComparison" class="muted"></p>
+            </div>
+          </div>
+          <div id="warrantyFacts" class="warranty-facts"></div>
           <p id="warrantyMessage" role="status"></p>
-          <p id="warrantyForecast" class="muted"></p>
-          <p class="muted">按自设年度额度提醒，不代表质保资格认定；具体条款以本人车辆权益为准。</p>
+          <details><summary>计算说明</summary>
+            <p id="warrantyForecast" class="muted"></p>
+            <p class="muted">时间按北京时间自然日计算，包含今天。日中读数不会叠加后续里程。进度对比仅供参考，不代表当前安全。按自设年度额度提醒，不代表质保资格认定；具体条款以本人车辆权益为准。</p>
+          </details>
         </section>
         <section class="range-toolbar" aria-label="统计日期范围">
           <div class="pills" id="ranges">

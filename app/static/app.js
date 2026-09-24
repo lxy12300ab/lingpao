@@ -27,8 +27,37 @@ function renderWarranty() {
   $("warrantyCard").hidden = !token;
   const w = warrantyState;
   $("warrantyPeriod").textContent = w.configured ? w.start + " — " + w.end : "按提车周年计算，与上方统计筛选无关";
-  $("warrantyNumbers").textContent = w.used == null ? "请设置年度额度并校准仪表" :
-    "已用 " + num(w.used) + " km · 剩余 " + num(w.remaining) + " km";
+  const known = w.used != null;
+  const intraday = w.settings?.kind === "intraday";
+  const incomplete = known && !intraday && w.projection == null;
+  $("warrantyCaption").textContent = !known ? "建立你的年度里程预算" :
+    w.remaining < 0 ? "已超过自设额度" : intraday ? "截至校准时剩余" : incomplete ? "剩余额度上限 · 待校准" : "估算剩余额度";
+  $("warrantyNumbers").textContent = known ? num(Math.abs(w.remaining)) : "—";
+  $("warrantyUnit").hidden = !known;
+  $("warrantyUsage").textContent = known ? "已用 " + num(w.used) + " / " + num(w.limit) + " km" : "补充仪表读数，即可开启预警";
+  const badges = {notice:"额度 / 趋势提醒",warning:"接近上限",critical:"额度紧张",exceeded:"已超限"};
+  $("warrantyBadge").textContent = badges[w.level] || (!known ? "待校准" : intraday ? "日中 · 尚未结算" : incomplete ? "缺失记录 · 待校准" : "估算 · 持续关注");
+  $("warrantyBars").hidden = !known;
+  $("warrantyFacts").replaceChildren();
+  if (known) {
+    const totalDays = Math.round((day(w.end)-day(w.start))/86400000)+1;
+    const passed = Math.max(0, Math.min(totalDays, Math.round((day(today())-day(w.start))/86400000)+1));
+    const mileagePct = w.used / w.limit * 100, timePct = passed / totalDays * 100;
+    $("wMileage").value = Math.max(0, Math.min(100, mileagePct));
+    $("wTime").value = timePct;
+    $("wMileageLabel").textContent = mileagePct.toFixed(1) + "%";
+    $("wTimeLabel").textContent = timePct.toFixed(1) + "%";
+    $("warrantyComparison").textContent = intraday || incomplete ? "读数并非实时完整里程，对比仅作参考" :
+      mileagePct > timePct ? "里程消耗快于年度时间进度" : "里程消耗未超过年度时间进度";
+    const facts = [["距周期结束", Math.max(0,totalDays-passed) + " 天"],
+      ["预计全年", w.projection == null ? "待完整数据" : num(w.projection) + " km"],
+      ["剩余日均额度", w.daily_budget == null ? "待校准" : num(w.daily_budget) + " km"]];
+    for (const [label,value] of facts) {
+      const item = node("div");
+      item.append(node("span","muted",label),node("strong","",value));
+      $("warrantyFacts").append(item);
+    }
+  }
   const alertLabels = {notice:"额度或趋势提醒：", warning:"已使用至少 90% 额度：",
     critical:"已使用至少 95% 额度：", exceeded:"已超过自设年度上限："};
   $("warrantyMessage").textContent = (alertLabels[w.level] || "") +
