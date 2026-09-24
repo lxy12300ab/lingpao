@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 from .. import config, db, backup, service
-from ..models import Dataset, ManualMileage
+from ..models import Dataset, ManualMileage, WarrantySettings
+from .. import warranty
 
 def authorize(request: Request):
     raw = request.headers.get('authorization', '')
@@ -20,6 +21,36 @@ def authorize(request: Request):
         raise HTTPException(403, '不允许跨站写入')
 
 router = APIRouter(prefix='/api', dependencies=[Depends(authorize)])
+
+@router.get('/warranty')
+def warranty_status():
+    with db.connect() as c:
+        row = c.execute("SELECT value FROM settings WHERE key='warranty'").fetchone()
+        settings = json.loads(row['value']) if row else None
+        rows = [dict(r) for r in c.execute('SELECT date,km FROM daily_mileage')]
+    return warranty.summarize(settings, rows, datetime.now(config.TZ).date())
+
+@router.put('/warranty')
+def save_warranty(body: WarrantySettings):
+    today = datetime.now(config.TZ).date()
+    start, end = warranty.cycle(body.delivery, today)
+    if (body.delivery > today or body.baseline_date != start or
+        not start <= body.captured_date <= today or body.odometer < body.baseline):
+        raise HTTPException(422, '请核对本年度起点、读数日期及仪表里程，不能填写未来日期或倒退里程')
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        row = c.execute("SELECT value FROM settings WHERE key='warranty'").fetchone()
+        previous = json.loads(row['value']) if row else {}
+        if previous.get('revision', '') != body.expected_revision:
+            raise HTTPException(409, '校准记录已变化，请刷新后重试')
+        value = body.model_dump(mode='json', exclude={'expected_revision'})
+        value['revision'] = uuid.uuid4().hex
+        value['saved_at'] = config.now()
+        c.execute("INSERT INTO settings(key,value) VALUES('warranty',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                  (json.dumps(value, ensure_ascii=False),))
+        db.log(c, 'warranty_calibration', str(start), 'ok',
+               json.dumps({'before': previous, 'after': value}, ensure_ascii=False))
+    return warranty_status()
 
 @router.get('/data')
 def data():

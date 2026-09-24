@@ -22,6 +22,49 @@ const storage = {
 let token = storage.get("leapToken"),
   data = { daily: [], weekly: [], energy: [] };
 let dailyNotes = [];
+let warrantyState = {configured: false};
+function renderWarranty() {
+  $("warrantyCard").hidden = !token;
+  const w = warrantyState;
+  $("warrantyPeriod").textContent = w.configured ? w.start + " — " + w.end : "按提车周年计算，与上方统计筛选无关";
+  $("warrantyNumbers").textContent = w.used == null ? "请设置年度额度并校准仪表" :
+    "已用 " + num(w.used) + " km · 剩余 " + num(w.remaining) + " km";
+  const alertLabels = {notice:"额度或趋势提醒：", warning:"已使用至少 90% 额度：",
+    critical:"已使用至少 95% 额度：", exceeded:"已超过自设年度上限："};
+  $("warrantyMessage").textContent = (alertLabels[w.level] || "") +
+    (w.message || "历史每日数据不完整也可使用：以仪表读数作为校准依据。");
+  $("warrantyForecast").textContent = w.configured ?
+    "年度上限 " + num(w.limit) + " km · 读数日期 " + w.settings.captured_date +
+    (w.projection != null ? " · 预计全年 " + num(w.projection) + " km · 剩余日均额度约 " + num(w.daily_budget) + " km" : "") : "";
+  $("warrantyCard").dataset.level = w.level || "unknown";
+}
+$("warrantyEdit").onclick = () => {
+  const s = warrantyState.settings;
+  if (s) {
+    for (const [id, key] of Object.entries({wDelivery:"delivery",wLimit:"limit",wStart:"baseline_date",wBaseline:"baseline",wCaptured:"captured_date",wOdometer:"odometer",wKind:"kind"}))
+      $(id).value = s[key];
+  } else {
+    $("wCaptured").value = today();
+    $("wOdometer").value = "";
+    $("wKind").value = "intraday";
+  }
+  $("warrantyError").textContent = "";
+  showDialog("warrantyDialog");
+};
+$("warrantyForm").onsubmit = async event => {
+  event.preventDefault();
+  if (busy || !$("warrantyForm").reportValidity()) return;
+  busy = true; $("warrantySave").disabled = true;
+  try {
+    warrantyState = await (await api("/api/warranty", {method:"PUT", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({delivery:$("wDelivery").value,limit:Number($("wLimit").value),
+        baseline_date:$("wStart").value,baseline:Number($("wBaseline").value),
+        captured_date:$("wCaptured").value,odometer:Number($("wOdometer").value),kind:$("wKind").value,
+        expected_revision:warrantyState.settings?.revision || ""})})).json();
+    renderWarranty(); $("warrantyDialog").close(); notify("年度仪表校准已保存");
+  } catch(e) { $("warrantyError").textContent = e.message; }
+  finally { busy = false; $("warrantySave").disabled = false; }
+};
 let range = "month",
   view = "daily",
   pageName = "overview",
@@ -962,6 +1005,8 @@ async function refresh() {
   try {
     const payload = await (await api("/api/data")).json();
     dailyNotes = await (await api("/api/notes")).json();
+    warrantyState = await (await api("/api/warranty")).json();
+    renderWarranty();
     data = {
       daily: payload.daily.slice().sort((a, b) => a.date.localeCompare(b.date)),
       weekly: payload.weekly
@@ -1519,6 +1564,8 @@ $("dayEditForm").onsubmit = async (event) => {
     render();
     $("dayDialog").close();
     notify("当天记录已保存");
+    warrantyState = await (await api("/api/warranty")).json();
+    renderWarranty();
   } catch (error) {
     $("dayEditError").textContent = error.message;
   } finally {
@@ -1671,6 +1718,7 @@ $("logoutButton").onclick = () => {
   data = { daily: [], weekly: [], energy: [] };
   lastSynced = "";
   $("pendingBanner").hidden = true;
+  $("warrantyCard").hidden = true;
   $("backupList").replaceChildren();
   $("screenshotList").replaceChildren();
   $("logList").replaceChildren();

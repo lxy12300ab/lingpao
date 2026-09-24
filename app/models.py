@@ -15,6 +15,16 @@ def normalize_period(value):
 class Strict(BaseModel):
     model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
 
+class WarrantySettings(Strict):
+    delivery: date
+    limit: float = Field(gt=0, le=1000000)
+    baseline_date: date
+    baseline: float = Field(ge=0, le=10000000)
+    captured_date: date
+    odometer: float = Field(ge=0, le=10000000)
+    kind: str = Field(pattern='^(intraday|end_of_day)$')
+    expected_revision: str = ''
+
 class Daily(Strict):
     date: date
     km: float = Field(ge=0, le=3000)

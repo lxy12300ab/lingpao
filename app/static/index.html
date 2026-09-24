@@ -130,6 +130,14 @@
             ></span
           ><svg class="icon"><use href="#i-arrow" /></svg>
         </button>
+        <section id="warrantyCard" class="panel warranty-card" hidden>
+          <div class="section-head"><h2>年度里程预警</h2><button id="warrantyEdit" class="secondary">仪表校准</button></div>
+          <p id="warrantyPeriod" class="muted"></p>
+          <p id="warrantyNumbers" class="warranty-numbers"></p>
+          <p id="warrantyMessage" role="status"></p>
+          <p id="warrantyForecast" class="muted"></p>
+          <p class="muted">按自设年度额度提醒，不代表质保资格认定；具体条款以本人车辆权益为准。</p>
+        </section>
         <section class="range-toolbar" aria-label="统计日期范围">
           <div class="pills" id="ranges">
             <button data-range="month" class="active">本月</button
@@ -516,6 +524,23 @@
         确认，计入手记
       </button>
       <p id="reviewResult" class="result" role="status"></p>
+    </dialog>
+    <dialog id="warrantyDialog" aria-labelledby="warrantyTitle">
+      <div class="dialog-head"><h2 id="warrantyTitle">年度额度与仪表校准</h2>
+        <button class="icon-button" data-close="warrantyDialog" aria-label="关闭">×</button></div>
+      <form id="warrantyForm">
+        <label for="wDelivery">提车日期（周年起点）</label><input id="wDelivery" type="date" required value="2026-07-18">
+        <label for="wLimit">年度上限（km，按本人权益确认）</label><input id="wLimit" type="number" min="1" max="1000000" required value="35000">
+        <label for="wStart">当前周期起点日期</label><input id="wStart" type="date" required value="2026-07-18">
+        <label for="wBaseline">周期起点仪表里程（km）</label><input id="wBaseline" type="number" min="0" max="10000000" step="any" required value="0">
+        <p class="muted">第一年记不清可按 0 保守估算；以后每个周年需重新校准，不能沿用 0。</p>
+        <label for="wCaptured">仪表读数日期</label><input id="wCaptured" type="date" required>
+        <label for="wOdometer">仪表总里程（km）</label><input id="wOdometer" type="number" min="0" max="10000000" step="any" required>
+        <label for="wKind">读数状态</label><select id="wKind"><option value="intraday">当天尚未结束（日中）</option><option value="end_of_day">当天行驶已结束（日终）</option></select>
+        <p class="muted">日中读数不会再叠加当天或后续里程，需补充日终读数。只校准年度预警，不修改每日统计。</p>
+        <p id="warrantyError" role="alert"></p>
+        <button id="warrantySave" type="submit" class="primary full-width">保存校准</button>
+      </form>
     </dialog>
     <dialog id="dayDialog" aria-labelledby="dayTitle">
       <div class="dialog-head">
