@@ -868,6 +868,7 @@ function renderBreakdown() {
   const row = data.energy.find((r) => r.period === $("energyPeriod").value),
     target = $("energyBreakdown");
   target.replaceChildren();
+  renderEnergyComparison(row);
   if (!row) {
     empty(
       target,
@@ -953,6 +954,45 @@ function renderBreakdown() {
   });
   wrapper.append(svg, center);
   target.append(wrapper, legend);
+}
+function renderEnergyComparison(row) {
+  const target = $("energyComparison");
+  target.replaceChildren();
+  target.hidden = !row;
+  if (!row) return;
+  const m = cycleEnergyMetrics(row, data.weekly, data.daily);
+  const compare = node("section"), battery = node("section");
+  compare.append(node("p", "eyebrow", "DISTANCE CROSS-CHECK"), node("h3", "", "这一周，走了多远"));
+  const max = Math.max(m.recorded, m.inferred || 0, 1);
+  for (const [label, value, cls] of [["已记录里程", m.recorded, "actual"], ["能耗推算里程", m.inferred, "estimated"]]) {
+    const line = node("div", "energy-compare-label");
+    line.append(node("span", "", label), node("strong", "", value === null ? "暂无同周期电耗" : num(value) + " km"));
+    compare.append(line);
+    if (value !== null) {
+      const bar = node("progress", cls);
+      bar.max = max; bar.value = value; bar.setAttribute("aria-label", label + " " + num(value) + " 公里");
+      compare.append(bar);
+    }
+  }
+  let caption = "按已有每日记录汇总；完整周期时显示差异，不把未记录日期当作 0。";
+  if (m.difference !== null) {
+    const sign = m.difference > 0 ? "+" : "";
+    caption = "推算 − 已记录：" + sign + num(m.difference) + " km" +
+      (m.differencePct === null ? " · 实际为 0，不计算差异比例" : "（" + sign + m.differencePct.toFixed(1) + "%）");
+  }
+  compare.append(node("p", "muted", caption));
+  battery.append(node("p", "eyebrow", "MONDAY · FULL CHARGE"), node("h3", "", "满电出发，理论还剩"));
+  battery.append(node("p", "energy-battery-number", m.remainingPct.toFixed(1) + "%"));
+  const charge = node("progress", "battery-charge");
+  charge.max = 100; charge.value = m.remainingPct;
+  charge.setAttribute("aria-label", "理论剩余电量 " + m.remainingPct.toFixed(1) + "%");
+  battery.append(charge, node("p", "muted", "本周 " + num(row.totalKwh) + " kWh · 相当于 " + m.consumedPct.toFixed(1) + "% 电池容量"));
+  if (row.totalKwh >= 81.9)
+    battery.append(node("p", "", "单次满电额度已用尽" + (m.excess > 0 ? "，超出 " + num(m.excess) + " kWh" : "")));
+  const details = node("details", "energy-math-help"), summary = node("summary", "", "折算口径");
+  details.append(summary, node("p", "muted",
+    "参考容量 81.9 kWh，假设周一 100% 出发且周内未补电，不代表仪表实际电量。推算里程 = 周总耗电 ÷ 同周期百公里电耗 × 100；两个指标的统计口径可能不同，差异不直接认定为识别错误，不会修改历史里程。"));
+  target.append(compare, battery, details);
 }
 function renderRecords(rows) {
   const target = $("dailyRows");
