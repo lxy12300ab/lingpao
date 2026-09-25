@@ -759,7 +759,7 @@ function renderWeeklyDistance(rows) {
     empty(target, "还没有周期记录", "上传周能耗截图后可查看里程对照。");
     return;
   }
-  const items = rows.slice(-60).map(r => {
+  const items = rows.slice().sort((a,b)=>b.period.localeCompare(a.period)).slice(0,60).map(r => {
     const e = data.energy.find(e => e.period === r.period);
     const m = cycleEnergyMetrics(e || {period:r.period,totalKwh:0}, data.weekly, data.daily);
     const [start,end] = r.period.split(" - ").map(s => s.replaceAll("/", "-"));
@@ -802,7 +802,7 @@ function renderWeeklyDistance(rows) {
   });
   target.append(svg);
   const index=items.findIndex(r=>r.period===selectedWeek);
-  choose(index<0?items.length-1:index);
+  choose(index<0?0:index);
 }
 function renderEnergyChart(rows) {
   weeklyChartRows = rows;
@@ -825,13 +825,13 @@ function renderEnergyChart(rows) {
     empty(target, "还没有能耗曲线", "补充周能耗截图，就能看到每周的变化。");
     return;
   }
-  const items = rows.slice(-60),
+  const items = rows.slice().sort((a,b)=>b.period.localeCompare(a.period)).slice(0,60),
     W = Math.max(target.clientWidth || 600, items.length * 30 + 65, 300),
     H = 220;
   const svg = svgNode("svg", {
     viewBox: "0 0 " + W + " " + H,
     role: "group",
-    "aria-label": "周能耗折线图，横轴按周期开始日期排列",
+    "aria-label": "周能耗折线图，最新周期在左侧",
   });
   svg.style.minWidth = (items.length > 12 ? items.length * 30 + 65 : 0) + "px";
   const max = Math.ceil(Math.max(...items.map((r) => r.value)) / 5) * 5;
@@ -853,7 +853,7 @@ function renderEnergyChart(rows) {
   const paths = [];
   let current = "";
   points.forEach((p, i) => {
-    if (i && starts[i] - starts[i - 1] !== 7 * 86400000) {
+    if (i && starts[i - 1] - starts[i] !== 7 * 86400000) {
       paths.push(current);
       current = "";
     }
@@ -951,7 +951,7 @@ function renderEnergyChart(rows) {
   });
   target.append(svg);
   const i = items.findIndex((r) => r.period === selectedWeek);
-  choose(i < 0 ? items.length - 1 : i);
+  choose(i < 0 ? 0 : i);
 }
 function renderBreakdown() {
   const row = data.energy.find((r) => r.period === $("energyPeriod").value),
