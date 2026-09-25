@@ -18,11 +18,26 @@ def test_intraday_never_double_counts():
 def test_end_of_day_missing_and_projection():
     s=settings();s['kind']='end_of_day'
     r=warranty.summarize(s,[{'date':'2026-09-25','km':100}],date(2026,9,25))
-    assert r['used']==7506 and r['projection'] > 35000
-    assert r['level']=='notice'
+    assert r['used']==7506 and r['projection'] is None
+    assert r['level']=='tracking'
     r=warranty.summarize(s,[],date(2026,9,26))
     assert r['projection'] is None and '缺少 1 天' in r['message']
     assert warranty.cycle(date(2024,2,29),date(2025,3,1))[0]==date(2025,2,28)
+
+def test_recent_weeks_forecast():
+    from datetime import timedelta
+    s=settings();s.update(kind='end_of_day', odometer=7441)
+    rows=[{'date':str(date(2026,8,24)+timedelta(days=i)), 'km':70} for i in range(28)]
+    rows.append({'date':'2026-09-25','km':29})
+    r=warranty.summarize(s,rows,date(2026,9,25))
+    assert len(r['sample_weeks'])==4 and r['weekly_average']==490
+    assert r['projection']==7470+41+70*295
+    assert r['extra_budget']==35000-r['projection']
+    # Missing a day excludes a week; explicit zero is valid.
+    rows[0]['km']=0
+    assert len(warranty.summarize(s,rows,date(2026,9,25))['sample_weeks'])==4
+    rows.pop(0)
+    assert len(warranty.summarize(s,rows,date(2026,9,25))['sample_weeks'])==3
 
 def test_calibration_api(storage):
     with TestClient(app) as client:

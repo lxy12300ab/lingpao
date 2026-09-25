@@ -21,6 +21,7 @@ def summarize(settings, rows, today):
               'end': str(end - timedelta(days=1)), 'limit': settings['limit'],
               'used': None, 'remaining': None, 'projection': None,
               'daily_budget': None, 'level': 'unknown', 'estimated': True}
+    result.update(sample_weeks=[], weekly_average=None, extra_budget=None, missing_days=0)
     captured = date.fromisoformat(settings['captured_date'])
     if today < delivery or settings['baseline_date'] != str(start) or not start <= captured < end:
         result['message'] = '本年度缺少起点或仪表校准，请更新本周期起点读数；历史记录不会清零。'
@@ -40,9 +41,30 @@ def summarize(settings, rows, today):
             cursor += timedelta(days=1)
         result['message'] = (f'校准后缺少 {missing} 天记录，已用里程仅为下限、剩余额度仅为上限，请重新校准。'
                              if missing else '按日终仪表及后续已记录里程估算；今天可能尚未完整，请定期校准。')
+        result['missing_days'] = missing
         if not missing:
-            elapsed = (today - start).days + 1
-            result['projection'] = round(used / elapsed * (end-start).days)
+            # Only completed Monday–Sunday weeks within this annual cycle.
+            monday = today - timedelta(days=today.weekday()+7)
+            totals = []
+            while monday >= start and len(totals) < 4:
+                days = [str(monday + timedelta(days=i)) for i in range(7)]
+                if all(d in by_date for d in days):
+                    totals.append(sum(by_date[d] for d in days))
+                    result['sample_weeks'].append(days[0] + ' — ' + days[-1])
+                monday -= timedelta(days=7)
+            if totals:
+                average = sum(totals) / len(totals) / 7
+                # Today is unfinished unless explicitly calibrated as end-of-day.
+                # Reserve at least a typical full day, never discard observed km.
+                remaining_days = (end-today).days-1
+                today_km = by_date.get(str(today), 0)
+                today_reserve = 0 if captured == today else max(0, average-today_km)
+                forecast = used + today_reserve + average * remaining_days
+                result['projection'] = round(forecast)
+                result['weekly_average'] = round(average*7, 1)
+                result['extra_budget'] = round(settings['limit'] - forecast)
+            else:
+                result['message'] += ' 暂无完整已结束自然周，暂不预测全年。'
             result['daily_budget'] = round(max(0, settings['limit']-used) / max(1, (end-today).days), 1)
     result['used'] = round(used, 1)
     result['remaining'] = round(settings['limit']-used, 1)

@@ -29,7 +29,7 @@ function renderWarranty() {
   $("warrantyPeriod").textContent = w.configured ? w.start + " — " + w.end : "按提车周年计算，与上方统计筛选无关";
   const known = w.used != null;
   const intraday = w.settings?.kind === "intraday";
-  const incomplete = known && !intraday && w.projection == null;
+  const incomplete = known && !intraday && w.missing_days > 0;
   $("warrantyCaption").textContent = !known ? "建立你的年度里程预算" :
     w.remaining < 0 ? "已超过自设额度" : intraday ? "截至校准时剩余" : incomplete ? "剩余额度上限 · 待校准" : "估算剩余额度";
   $("warrantyNumbers").textContent = known ? num(Math.abs(w.remaining)) : "—";
@@ -50,7 +50,7 @@ function renderWarranty() {
     $("warrantyComparison").textContent = intraday || incomplete ? "读数并非实时完整里程，对比仅作参考" :
       mileagePct > timePct ? "里程消耗快于年度时间进度" : "里程消耗未超过年度时间进度";
     const facts = [["距周期结束", Math.max(0,totalDays-passed) + " 天"],
-      ["预计全年", w.projection == null ? "待完整数据" : num(w.projection) + " km"],
+      ["按近期习惯预计全年", w.projection == null ? "待完整周数据" : num(w.projection) + " km"],
       ["剩余日均额度", w.daily_budget == null ? "待校准" : num(w.daily_budget) + " km"]];
     for (const [label,value] of facts) {
       const item = node("div");
@@ -58,13 +58,20 @@ function renderWarranty() {
       $("warrantyFacts").append(item);
     }
   }
+  $("warrantyTravel").hidden = w.extra_budget == null;
+  $("warrantyTravel").textContent = w.extra_budget == null ? "" : w.extra_budget >= 0 ?
+    "预计可额外安排约 " + num(w.extra_budget) + " km · 长途请按往返里程预留余量" :
+    "按近期习惯预计超出 " + num(-w.extra_budget) + " km，暂不建议增加额外行程";
+  $("warrantyBasis").textContent = w.weekly_average == null ? "有完整已结束自然周后，按近期用车习惯预测。" :
+    "依据最近 " + w.sample_weeks.length + " 个完整周 · 周均 " + num(w.weekly_average) + " km。额外空间已扣除预计日常用车，仅供规划，不是保证额度。";
   const alertLabels = {notice:"额度或趋势提醒：", warning:"已使用至少 90% 额度：",
     critical:"已使用至少 95% 额度：", exceeded:"已超过自设年度上限："};
   $("warrantyMessage").textContent = (alertLabels[w.level] || "") +
     (w.message || "历史每日数据不完整也可使用：以仪表读数作为校准依据。");
   $("warrantyForecast").textContent = w.configured ?
     "年度上限 " + num(w.limit) + " km · 读数日期 " + w.settings.captured_date +
-    (w.projection != null ? " · 预计全年 " + num(w.projection) + " km · 剩余日均额度约 " + num(w.daily_budget) + " km" : "") : "";
+    (w.projection != null ? " · 预计全年 " + num(w.projection) + " km · 剩余日均额度约 " + num(w.daily_budget) + " km。样本周期：" + w.sample_weeks.join("；") +
+      "。保留历史累计，只用近期周均推算未来。今天尚未日终校准时，按近期日均补足今日预算；今日已记录更多则使用实际值，不重复累加。" : "") : "";
   $("warrantyCard").dataset.level = w.level || "unknown";
 }
 $("warrantyEdit").onclick = () => {

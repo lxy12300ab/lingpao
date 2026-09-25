@@ -748,6 +748,7 @@ small {
 #wTime::-moz-progress-bar { background: #b89b68; }
 .warranty-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; border-top: 1px solid var(--line); padding-top: 20px; }
 .warranty-facts:empty { display: none; }
+.warranty-travel { padding: 16px; border: 1px solid var(--line); border-radius: 12px; font-size: 17px; line-height: 1.6; }
 .warranty-facts span, .warranty-facts strong { display: block; }
 .warranty-facts span { font-size: 13px; margin-bottom: 8px; }
 .warranty-facts strong { font-size: 18px; font-weight: 500; }
