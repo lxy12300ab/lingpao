@@ -743,7 +743,77 @@ function renderEnergy() {
   select.disabled = !energies.length;
   renderBreakdown();
 }
+let weeklyChartMode = "energy", weeklyChartRows = [];
+$("weeklyTabs").querySelectorAll("button").forEach(button => {
+  button.onclick = () => {
+    weeklyChartMode = button.dataset.chart;
+    renderEnergyChart(weeklyChartRows);
+  };
+});
+function renderWeeklyDistance(rows) {
+  const target = $("weeklyChart"), readout = $("weeklyReadout");
+  target.replaceChildren(); readout.replaceChildren();
+  $("weeklyMileage").hidden = true;
+  $("weeklyNote").textContent = rows.length + " 个周期 · 点按查看 · 可横向滑动";
+  if (!rows.length) {
+    empty(target, "还没有周期记录", "上传周能耗截图后可查看里程对照。");
+    return;
+  }
+  const items = rows.slice(-60).map(r => {
+    const e = data.energy.find(e => e.period === r.period);
+    const m = cycleEnergyMetrics(e || {period:r.period,totalKwh:0}, data.weekly, data.daily);
+    const [start,end] = r.period.split(" - ").map(s => s.replaceAll("/", "-"));
+    return {period:r.period, ...m, inferred:e ? m.inferred : null,
+      recorded:data.daily.some(d => d.date >= start && d.date <= end) ? m.recorded : null};
+  });
+  const W = Math.max(target.clientWidth || 300, items.length * 84 + 55), H = 260;
+  const svg = svgNode("svg", {viewBox:"0 0 " + W + " " + H, role:"group","aria-label":"每周里程对比，绿色为实际记录，金色为能耗推算，单位公里"});
+  svg.style.minWidth = W + "px";
+  const max = Math.max(100, Math.ceil(Math.max(...items.flatMap(r => [r.recorded || 0,r.inferred || 0])) / 100) * 100);
+  const {base,plotHeight,left,right} = axis(svg,W,H,max);
+  const step = (W-left-right)/items.length, groups=[];
+  const choose = i => {
+    const r=items[i]; selectedWeek=r.period;
+    groups.forEach((g,j)=>g.classList.toggle("selected",i===j));
+    readout.replaceChildren(node("span","",r.period));
+    const values = node("div","weekly-distance-values");
+    values.append(node("strong","", (r.complete ? "实际" : "已记录") + " " + (r.recorded === null ? "—" : num(r.recorded)+" km")),
+      node("strong","", "推算 " + (r.inferred === null ? "—" : num(r.inferred)+" km")));
+    readout.append(values);
+    $("weeklyNote").textContent = r.inferred === null ? "暂无同周期总耗电 · — 表示未记录" :
+      r.complete ? "推算 − 实际：" + (r.difference>0?"+":"") + num(r.difference)+" km" : "按已有记录汇总 · 不将未记录视为 0";
+  };
+  items.forEach((r,i)=>{
+    const x=left+step*(i+.5), group=svgNode("g",{class:"weekly-bar-group"});
+    groups.push(group);
+    for (const [value,dx,cls] of [[r.recorded,-23,"recorded"],[r.inferred,3,"inferred"]]) {
+      if (value === null) group.append(svgNode("text",{x:x+dx+10,y:base-5,"text-anchor":"middle",class:"chart-label"},"—"));
+      else {
+        const h=Math.max(2,value/max*plotHeight);
+        group.append(svgNode("rect",{x:x+dx,y:base-h,width:20,height:h,rx:4,class:cls}));
+      }
+    }
+    group.append(svgNode("text",{x,y:base+22,"text-anchor":"middle",class:"chart-label"},r.period.slice(5,10)));
+    const hit=svgNode("rect",{x:x-step/2,y:0,width:step,height:base,fill:"transparent",tabindex:0,role:"button",
+      "aria-label":r.period+"，已记录 "+(r.recorded===null?"暂无":num(r.recorded)+" 公里")+"，推算 "+(r.inferred===null?"暂无":num(r.inferred)+" 公里")});
+    hit.onclick=()=>choose(i); hit.onfocus=()=>choose(i);
+    hit.onkeydown=e=>{if (["Enter"," "].includes(e.key)){e.preventDefault();choose(i);}};
+    group.append(hit);svg.append(group);
+  });
+  target.append(svg);
+  const index=items.findIndex(r=>r.period===selectedWeek);
+  choose(index<0?items.length-1:index);
+}
 function renderEnergyChart(rows) {
+  weeklyChartRows = rows;
+  const distance = weeklyChartMode === "distance";
+  $("weeklyTabs").querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("active",b.dataset.chart===weeklyChartMode);
+    b.setAttribute("aria-pressed",String(b.dataset.chart===weeklyChartMode));
+  });
+  $("weeklyHint").textContent = distance ? "同周期 · 单位 km" : "数值越低，用电越省";
+  $("weeklyLegend").textContent = distance ? "绿色：实际记录 · 金色：能耗推算" : "kWh / 100km";
+  if (distance) return renderWeeklyDistance(rows);
   const target = $("weeklyChart"),
     readout = $("weeklyReadout");
   target.replaceChildren();

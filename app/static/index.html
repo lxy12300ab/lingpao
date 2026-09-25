@@ -315,7 +315,11 @@
                 <p class="eyebrow">LESS ENERGY, MORE JOURNEY</p>
                 <h2>每周能耗趋势</h2>
               </div>
-              <span class="small-tag">数值越低，用电越省</span>
+              <span id="weeklyHint" class="small-tag">数值越低，用电越省</span>
+            </div>
+            <div id="weeklyTabs" class="pills" role="group" aria-label="每周统计图类型">
+              <button type="button" data-chart="energy" aria-pressed="true" class="active">百公里能耗</button>
+              <button type="button" data-chart="distance" aria-pressed="false">里程对比</button>
             </div>
             <div
               id="weeklyReadout"
@@ -330,7 +334,7 @@
               ></div>
             </div>
             <div class="chart-footer">
-              <span><i class="legend-dot green"></i>kWh / 100km</span
+              <span id="weeklyLegend"><i class="legend-dot green"></i>kWh / 100km</span
               ><span id="weeklyNote"></span>
             </div>
           </section>
