@@ -749,6 +749,8 @@ function renderEnergyChart(rows) {
   target.replaceChildren();
   readout.replaceChildren();
   $("weeklyNote").textContent = rows.length + " 个周期 · 点按查看";
+  $("weeklyMileage").replaceChildren();
+  $("weeklyMileage").hidden = !rows.length;
   if (!rows.length) {
     empty(target, "还没有能耗曲线", "补充周能耗截图，就能看到每周的变化。");
     return;
@@ -814,6 +816,23 @@ function renderEnergyChart(rows) {
       node("strong", "", num(items[i].value)),
       node("span", "", "kWh / 100km"),
     );
+    const energy = data.energy.find(r => r.period === selectedWeek);
+    const metrics = cycleEnergyMetrics(energy || {period:selectedWeek, totalKwh:0}, data.weekly, data.daily);
+    const mileage = $("weeklyMileage");
+    mileage.replaceChildren();
+    const cards = [
+      [metrics.complete ? "实际里程" : "已记录里程", num(metrics.recorded) + " km"],
+      ["能耗推算里程", energy ? num(metrics.inferred) + " km" : "暂无周期总耗电"],
+    ];
+    for (const [label, value] of cards) {
+      const card = node("div");
+      card.append(node("span", "muted", label), node("strong", "", value));
+      mileage.append(card);
+    }
+    mileage.append(node("p", "muted", energy && metrics.complete ?
+      "推算 − 实际：" + (metrics.difference > 0 ? "+" : "") + num(metrics.difference) + " km" +
+      (metrics.differencePct === null ? "" : "（" + (metrics.differencePct > 0 ? "+" : "") + metrics.differencePct.toFixed(1) + "%）") :
+      "里程按所选完整周期汇总；推算需要同周期总耗电，不修改实际记录。"));
   };
   points.forEach((p, i) => {
     const dot = svgNode("circle", {

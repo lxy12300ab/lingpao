@@ -706,6 +706,12 @@ small {
   line-height: 1;
 }
 .energy-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--line); }
+.weekly-mileage { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin: 16px 0 24px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.weekly-mileage[hidden] { display: none; }
+.weekly-mileage span, .weekly-mileage strong { display: block; }
+.weekly-mileage span { font-size: 14px; margin-bottom: 8px; }
+.weekly-mileage strong { font-size: clamp(18px, 3vw, 26px); font-weight: 500; }
+.weekly-mileage p { grid-column: 1 / -1; font-size: 13px; margin: 0; }
 .energy-comparison[hidden] { display: none; }
 .energy-comparison h3 { margin: 8px 0 24px; }
 .energy-compare-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 15px; margin: 18px 0 8px; }
