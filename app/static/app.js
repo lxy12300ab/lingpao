@@ -706,32 +706,7 @@ function renderInsights(rows) {
     );
 }
 function renderEnergy() {
-  const weekly = data.weekly.filter((r) => periodInRange(r.period)),
-    latest = weekly.at(-1),
-    previous = weekly.at(-2);
-  $("latestEnergy").textContent = latest ? num(latest.value) : "—";
-  $("latestEnergyPeriod").textContent = latest
-    ? latest.period
-    : "所选范围还没有周能耗记录";
-  const change = $("energyChange");
-  change.replaceChildren();
-  change.classList.remove("higher");
-  if (previous && latest) {
-    const pct = ((latest.value - previous.value) / previous.value) * 100;
-    change.classList.toggle("higher", pct > 0);
-    change.append(
-      node("strong", "", (pct > 0 ? "+" : "") + num(pct) + "%"),
-      node(
-        "span",
-        "",
-        pct === 0
-          ? "与上一条周期记录持平"
-          : "较上一条周期记录" +
-              (pct > 0 ? "上升" : "下降") +
-              " · 相同单位对比",
-      ),
-    );
-  } else change.append(node("span", "", "积累两个周期后，可以查看能耗变化。"));
+  const weekly = data.weekly.filter((r) => periodInRange(r.period));
   renderEnergyChart(weekly);
   const energies = data.energy
       .filter((r) => periodInRange(r.period))

@@ -214,14 +214,22 @@ def recognize(path, captured: date):
             raise ValueError('缺少周能耗区域锚点')
         label_y = period_tokens[0]['y']
         bars = sorted([t for t in ts if re.fullmatch(r'\d{1,2}(?:\.\d{1,2})?', t['text'])
-                       and 1 <= float(t['text']) <= 50 and w*.2 < t['y'] < label_y-w*.12
+                       and 1 <= float(t['text']) <= 50 and w*.2 < t['y'] < label_y-w*.185
                        and t['conf'] >= 65], key=lambda t: t['x'])
+        evidence['weekly_candidates'] = [{'text': t['text'], 'x': t['x'], 'y': t['y']} for t in bars]
         if len(bars) != 6:
-            raise ValueError('周柱状图没有识别出唯一六个数字')
+            raise ValueError(f'柱顶数字识别到 {len(bars)} 个，预期 6 个；已排除下方日期标签区域')
         centers = [t['x']+t['w']/2 for t in bars]
         gap = (centers[-1]-centers[0])/5
         if any(abs((centers[i+1]-centers[i])-gap) > gap*.15 for i in range(5)):
             raise ValueError('周能耗列间距异常')
+        evidence['weekly_readings'] = []
+        for i, bar in enumerate(bars):
+            accepted, readings = read_number_region(image, bar, 50)
+            evidence['weekly_readings'].append({'column': i+1, 'readings': readings, 'accepted': accepted})
+            if accepted is None or accepted < 1:
+                raise ValueError(f'第 {i+1} 根柱顶数字局部识别不一致，请核对')
+            bar['text'] = str(accepted)
         periods = []
         for x in centers:
             # Date captions are rotated ~30 degrees in the Leap App screenshot.
@@ -243,4 +251,4 @@ def recognize(path, captured: date):
     except ValueError as exc:
         warnings.append(f'周能耗：{exc}')
     return {'data': Dataset(**output).model_dump(mode='json'), 'warnings': warnings, 'evidence': evidence,
-            'captured_date': captured.isoformat(), 'engine': 'tesseract-chi_sim+eng-v3'}
+            'captured_date': captured.isoformat(), 'engine': 'tesseract-chi_sim+eng-v4'}
