@@ -349,6 +349,18 @@
           </section>
         </div>
         <div id="page-records" class="page-content" hidden>
+          <section class="panel note-search-panel">
+            <p class="eyebrow">FIND A MEMORY</p>
+            <h2>搜索手记</h2>
+            <label for="noteSearch">输入关键词，例如“保养”“杭州”</label>
+            <div class="note-search-controls">
+              <input id="noteSearch" type="search" placeholder="搜索以前写下的记录…" maxlength="2000">
+              <button id="clearNoteSearch" type="button" class="secondary">清空</button>
+            </div>
+            <p id="noteSearchStatus" class="muted" role="status" aria-live="polite"></p>
+            <div id="noteSearchResults"></div>
+            <button id="moreNoteResults" class="secondary full-width" hidden>加载更多搜索结果</button>
+          </section>
           <section class="panel">
             <div class="section-head">
               <div>

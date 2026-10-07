@@ -705,6 +705,12 @@ small {
   font-size: 14px;
   line-height: 1;
 }
+.note-search-panel { margin-bottom: 24px; }
+.note-search-controls { display: flex; gap: 10px; align-items: center; }
+.note-search-controls input { flex: 1; min-width: 0; font-size: 16px; }
+.note-search-result { display: block; width: 100%; text-align: left; padding: 18px 0; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--text); }
+.note-search-result strong { display: block; font-size: 16px; margin-bottom: 8px; }
+.note-search-result span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; font-size: 15px; }
 .energy-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--line); }
 .weekly-mileage { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin: 16px 0 24px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 #weeklyTabs { width: fit-content; margin-bottom: 20px; }

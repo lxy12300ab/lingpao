@@ -24,7 +24,7 @@ let token = storage.get("leapToken"),
 let dailyNotes = [];
 let warrantyState = {configured: false};
 function renderWarranty() {
-  $("warrantyCard").hidden = !token;
+  $("warrantyCard").hidden = !token || pageName !== "overview";
   const w = warrantyState;
   $("warrantyPeriod").textContent = w.configured ? w.start + " — " + w.end : "按提车周年计算，与上方统计筛选无关";
   const known = w.used != null;
@@ -236,6 +236,7 @@ function navigate(name) {
     mileagePage = 0;
   }
   pageName = name;
+  $("warrantyCard").hidden = !token || name !== "overview";
   document
     .querySelectorAll(".page-content")
     .forEach((el) => (el.hidden = el.id !== "page-" + name));
@@ -1066,6 +1067,7 @@ function renderEnergyComparison(row) {
   target.append(compare, battery, details);
 }
 function renderRecords(rows) {
+  renderNoteSearch();
   const target = $("dailyRows");
   target.replaceChildren();
   $("recordCount").textContent = rows.length;
@@ -1108,6 +1110,33 @@ function renderRecords(rows) {
       target.append(button);
     });
 }
+let noteSearchLimit = 30;
+function renderNoteSearch() {
+  const query = $("noteSearch").value.trim().toLocaleLowerCase();
+  const target = $("noteSearchResults");
+  target.replaceChildren();
+  $("moreNoteResults").hidden = true;
+  if (!query) {
+    $("noteSearchStatus").textContent = "搜索全部历史文字记录，不受上方日期筛选限制。只有文字、没有里程的日期也能找到。";
+    return;
+  }
+  const matches = dailyNotes.filter(r => r.note.toLocaleLowerCase().includes(query))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  $("noteSearchStatus").textContent = matches.length ? "找到 " + matches.length + " 条记录 · 最新在前 · 点击可查看或编辑" : "没有找到相关记录，试试其他关键词。";
+  for (const r of matches.slice(0,noteSearchLimit)) {
+    const button = node("button", "note-search-result");
+    button.type = "button";
+    button.append(node("strong","",fullDate(r.date)),node("span","",r.note));
+    button.onclick = () => openDay(r.date);
+    target.append(button);
+  }
+  $("moreNoteResults").hidden = matches.length <= noteSearchLimit;
+}
+$("noteSearch").oninput = () => { noteSearchLimit = 30; renderNoteSearch(); };
+$("clearNoteSearch").onclick = () => {
+  $("noteSearch").value = ""; noteSearchLimit = 30; renderNoteSearch(); $("noteSearch").focus();
+};
+$("moreNoteResults").onclick = () => { noteSearchLimit += 30; renderNoteSearch(); };
 function openDay(date) {
   daySelected = date;
   const row = data.daily.find((r) => r.date === date);
