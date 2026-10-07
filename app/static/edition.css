@@ -51,10 +51,10 @@
 }
 @media(max-width:700px) {
   .panel { padding:20px; border-radius:20px; }
-  .vehicle-card { min-height:310px; }
-  .hero-image { object-fit:contain; object-position:center top; height:auto; }
+  .vehicle-card { min-height:250px; aspect-ratio: 4 / 3; }
+  .hero-image { object-fit:cover; object-position:70% center; height:100%; }
   .vehicle-card { background:#141e26; }
-  .vehicle-shade { background:linear-gradient(180deg,#09131b33,transparent 48%,#141e26 82%); }
+  .vehicle-shade { background:linear-gradient(180deg,#09131b44,transparent 40%,#09131ba6); }
   .vehicle-bottom { left:20px; right:20px; bottom:20px; gap:12px; }
   .vehicle-bottom h2 { font-size:22px; }
   .odometer strong { font-size:29px; }
