@@ -320,7 +320,7 @@ function render() {
     ? num(Math.max(...rows.map((r) => r.km)))
     : "—";
   $("lifetimeTotal").textContent = num(
-    data.daily.reduce((s, r) => s + r.km, 0),
+    warrantyState.lifetime?.km ?? data.daily.reduce((s, r) => s + r.km, 0),
   );
   $("rangeLabel").textContent = {
     month: "本月里程",
