@@ -13,7 +13,19 @@ def test_intraday_never_double_counts():
     result = warranty.summarize(s, [{'date':'2026-09-24','km':100}, {'date':'2026-09-25','km':100}], date(2026,9,25))
     assert result['used'] == 7406 and result['remaining'] == 27594
     assert result['projection'] is None
+    assert result['lifetime']['km'] == 7406
+    assert result['lifetime']['status'] == 'intraday'
     assert warranty.summarize(s, [], date(2027,7,18))['used'] is None
+
+def test_lifetime_independent_of_annual_baseline():
+    s=settings();s.update(kind='end_of_day',baseline=1000)
+    rows=[{'date':'2026-09-25','km':100}]
+    r=warranty.summarize(s,rows,date(2026,9,25))
+    assert r['lifetime']['km']==7506
+    assert r['used']==6506
+    r=warranty.summarize(s,rows,date(2027,7,18))
+    assert r['used'] is None and r['lifetime']['km']==7506
+    assert r['lifetime']['status']=='incomplete'
 
 def test_end_of_day_missing_and_projection():
     s=settings();s['kind']='end_of_day'

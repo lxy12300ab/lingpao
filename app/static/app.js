@@ -97,7 +97,7 @@ $("warrantyForm").onsubmit = async event => {
         baseline_date:$("wStart").value,baseline:Number($("wBaseline").value),
         captured_date:$("wCaptured").value,odometer:Number($("wOdometer").value),kind:$("wKind").value,
         expected_revision:warrantyState.settings?.revision || ""})})).json();
-    renderWarranty(); $("warrantyDialog").close(); notify("年度仪表校准已保存");
+    renderWarranty(); render(); $("warrantyDialog").close(); notify("年度仪表校准已保存");
   } catch(e) { $("warrantyError").textContent = e.message; }
   finally { busy = false; $("warrantySave").disabled = false; }
 };
@@ -336,6 +336,20 @@ function render() {
   const c = coverage(rows);
   $("coverageText").textContent = c.text;
   $("coverageText").classList.toggle("incomplete", !c.complete);
+  $("totalBasis").hidden = range !== "all";
+  if (range === "all") {
+    const lifetime = warrantyState.lifetime;
+    $("rangeLabel").textContent = lifetime ? "车辆累计里程" : "已记录累计里程";
+    $("total").textContent = num(lifetime ? lifetime.km : sum);
+    $("coverageText").textContent = rows.length ?
+      "其中 " + rows.length + " 天有每日明细 · 明细始于 " + rows[0].date : "暂无每日明细";
+    $("coverageText").classList.remove("incomplete");
+    const explanation = !lifetime ? "尚未校准仪表，当前仅合计每日记录，不含未录入的早期历史。" :
+      lifetime.status === "intraday" ? "截至 " + lifetime.captured_date + " 日中校准时的仪表读数，未叠加当天或后续里程。" :
+      lifetime.status === "incomplete" ? "累计估算下限：校准后有 " + lifetime.missing_days + " 天未记录，请校准仪表。" :
+      "累计估算：仪表校准读数 + 后续已记录里程；今天可能尚未完整。";
+    $("totalBasis").textContent = explanation + " 日均和最高值只按每日明细计算。";
+  }
   document.querySelectorAll("[data-range]").forEach((b) => {
     b.classList.toggle("active", b.dataset.range === range);
     b.setAttribute("aria-pressed", String(b.dataset.range === range));
@@ -1735,6 +1749,7 @@ $("dayEditForm").onsubmit = async (event) => {
     notify("当天记录已保存");
     warrantyState = await (await api("/api/warranty")).json();
     renderWarranty();
+    render();
   } catch (error) {
     $("dayEditError").textContent = error.message;
   } finally {

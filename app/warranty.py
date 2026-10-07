@@ -23,6 +23,21 @@ def summarize(settings, rows, today):
               'daily_budget': None, 'level': 'unknown', 'estimated': True}
     result.update(sample_weeks=[], weekly_average=None, extra_budget=None, missing_days=0)
     captured = date.fromisoformat(settings['captured_date'])
+    # Lifetime odometer is independent of the annual budget and survives anniversaries.
+    total = settings['odometer']
+    lifetime_missing = 0
+    if settings['kind'] == 'end_of_day':
+        values = {r['date']: r['km'] for r in rows}
+        cursor = captured + timedelta(days=1)
+        while cursor <= today:
+            total += values.get(str(cursor), 0)
+            if cursor < today and str(cursor) not in values:
+                lifetime_missing += 1
+            cursor += timedelta(days=1)
+    result['lifetime'] = {'km': round(total, 1), 'captured_date': str(captured),
+                          'status': 'intraday' if settings['kind'] == 'intraday' else
+                                    'incomplete' if lifetime_missing else 'estimated',
+                          'missing_days': lifetime_missing}
     if today < delivery or settings['baseline_date'] != str(start) or not start <= captured < end:
         result['message'] = '本年度缺少起点或仪表校准，请更新本周期起点读数；历史记录不会清零。'
         return result
