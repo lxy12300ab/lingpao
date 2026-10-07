@@ -24,6 +24,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <script src="/theme.js?v=__BUILD__"></script>
     <link rel="stylesheet" href="/style.css?v=__BUILD__" />
+    <link rel="stylesheet" href="/edition.css?v=__BUILD__" />
     <script src="/energy-math.js?v=__BUILD__" defer></script>
     <script src="/app.js?v=__BUILD__" defer></script>
   </head>
@@ -78,11 +79,11 @@
           <button data-page="overview" class="active" aria-current="page">
             <svg class="icon"><use href="#i-home" /></svg><span>总览</span>
           </button>
+          <button data-page="records">
+            <svg class="icon"><use href="#i-record" /></svg><span>行程</span>
+          </button>
           <button data-page="energy">
             <svg class="icon"><use href="#i-energy" /></svg><span>能耗</span>
-          </button>
-          <button data-page="records">
-            <svg class="icon"><use href="#i-record" /></svg><span>记录</span>
           </button>
           <button id="mobileUpload" class="nav-upload">
             <svg class="icon"><use href="#i-plus" /></svg><span>记录一程</span>
@@ -195,7 +196,7 @@
               </div>
             </section>
             <section class="vehicle-card">
-              <img src="/c11_hero.jpg" alt="零跑 C11" class="hero-image" />
+              <img src="/c11-banner.jpg?v=__BUILD__" alt="夜幕中的零跑 C11" class="hero-image" fetchpriority="high" />
               <div class="vehicle-shade"></div>
               <div class="vehicle-top">
                 <span class="vehicle-badge">我的座驾</span
@@ -213,7 +214,7 @@
               </div>
             </section>
           </div>
-          <section class="panel chart-panel">
+          <section id="journeyTrend" class="panel chart-panel">
             <div class="section-head">
               <div>
                 <p class="eyebrow">DISTANCE OVER TIME</p>
@@ -350,6 +351,8 @@
           </section>
         </div>
         <div id="page-records" class="page-content" hidden>
+          <div class="journey-heading"><div><p class="eyebrow">DAYS WORTH REMEMBERING</p><h2>里程与生活，一起记录</h2></div><button id="writeNote" class="secondary">写当天手记</button></div>
+          <div id="journeyCalendar"></div>
           <section class="panel note-search-panel">
             <p class="eyebrow">FIND A MEMORY</p>
             <h2>搜索手记</h2>
@@ -387,6 +390,14 @@
       </main>
     </div>
     <div id="toast" role="status" hidden></div>
+    <dialog id="recordChoice" aria-labelledby="recordChoiceTitle">
+      <div class="dialog-head"><div><p class="eyebrow">ADD A NEW MEMORY</p><h2 id="recordChoiceTitle">记录一程</h2></div><button data-close="recordChoice" class="icon-button" aria-label="关闭记录选择">×</button></div>
+      <p class="muted">上传零跑截图，或记下今天的小事。</p>
+      <div class="record-choices">
+        <button id="chooseScreenshot" class="secondary"><svg class="icon"><use href="#i-upload" /></svg><span><strong>上传里程截图</strong><small>识别里程与能耗，校验后入账</small></span></button>
+        <button id="chooseNote" class="secondary"><svg class="icon"><use href="#i-record" /></svg><span><strong>写当天手记</strong><small>记录去过哪里，也可补充公里数</small></span></button>
+      </div>
+    </dialog>
     <dialog id="loginDialog" aria-labelledby="loginTitle">
       <form id="loginForm">
         <span class="brand-mark large" aria-hidden="true"></span>

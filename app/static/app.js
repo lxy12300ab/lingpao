@@ -230,7 +230,26 @@ function periodInRange(period) {
 function selectedRows() {
   return data.daily.filter((r) => inRange(r.date));
 }
+// Reuse the same interactive chart and filters: no duplicate IDs or stale state.
+function placeJourneySections(name) {
+  const overview = $("page-overview");
+  const trend = $("journeyTrend");
+  const ranges = document.querySelector(".range-toolbar");
+  const calendarPanel = document.querySelector(".calendar-panel");
+  $("journeyCalendar").append(calendarPanel);
+  overview.querySelector(".overview-grid").after($("warrantyCard"));
+  const target = name === "records" ? $("page-records") : overview;
+  if (name === "records") {
+    target.querySelector(".journey-heading").after(trend);
+  } else {
+    $("warrantyCard").after(trend);
+  }
+  if (name === "energy") $("page-energy").prepend(ranges);
+  else trend.before(ranges);
+}
+placeJourneySections("overview");
 function navigate(name) {
+  placeJourneySections(name);
   if (name === "overview" && pageName !== "overview") {
     selectedMileage = "";
     mileagePage = 0;
@@ -258,8 +277,8 @@ function navigate(name) {
     ],
     records: [
       "YOUR JOURNEY ARCHIVE",
-      "把走过的路，留在这里。",
-      "逐日回看你的行程，记录会随着每次上传不断补全。",
+      "把日子，记在路上。",
+      "回看里程趋势，查找手记，记录每一天的小事。",
     ],
   };
   const [eyebrow, title, sub] = headings[name];
@@ -358,7 +377,7 @@ function render() {
     b.classList.toggle("active", b.dataset.view === view);
     b.setAttribute("aria-pressed", String(b.dataset.view === view));
   });
-  if (pageName === "overview") {
+  if (pageName === "overview" || pageName === "records") {
     renderMileage(rows);
     renderCalendar();
     renderInsights(rows);
@@ -1763,8 +1782,15 @@ $("dayUpload").onclick = () => {
   openUpload();
   notify("请选择截图实际拍摄日期，不一定是所补记录的日期。");
 };
-$("uploadButton").onclick = openUpload;
-$("mobileUpload").onclick = openUpload;
+function chooseRecord() {
+  if (!token) { showDialog("loginDialog"); return; }
+  showDialog("recordChoice");
+}
+$("uploadButton").onclick = chooseRecord;
+$("mobileUpload").onclick = chooseRecord;
+$("chooseScreenshot").onclick = () => { $("recordChoice").close(); openUpload(); };
+$("chooseNote").onclick = () => { $("recordChoice").close(); openDay(today()); };
+$("writeNote").onclick = () => openDay(today());
 $("screenshotFile").onchange = () => {
   const file = $("screenshotFile").files[0];
   if (!file) return;
@@ -1952,7 +1978,7 @@ let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (pageName === "overview") renderMileage(selectedRows());
+    if (pageName === "overview" || pageName === "records") renderMileage(selectedRows());
     if (pageName === "energy")
       renderEnergyChart(data.weekly.filter((r) => periodInRange(r.period)));
   }, 150);

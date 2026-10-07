@@ -1,0 +1,72 @@
+/* Personal edition: existing controls, clearer hierarchy; no external assets. */
+:root { --bg: #f3f4ef; --muted: #65746b; }
+:root[data-theme="dark"] { --bg: #101713; --panel: #1b241e; --muted: #aab8ad; }
+.app-shell { max-width: 1400px; }
+.page-heading h1 { font-size: clamp(25px, 3vw, 34px); line-height: 1.35; }
+.page-heading { padding: 30px 0; }
+.panel { border-radius: 22px; padding: 26px; }
+.overview-grid { grid-template-columns: 1fr; gap: 22px; }
+.vehicle-card { order: -1; min-height: 380px; border-radius: 22px; }
+.hero-image { object-position: center 51%; }
+.vehicle-shade { background: linear-gradient(180deg, #09131b55, transparent 40%, #09131bd9); }
+.vehicle-bottom { bottom: 26px; }
+.vehicle-bottom h2 { font-size: 26px; }
+.odometer strong { font-size: 38px; font-variant-numeric: tabular-nums; }
+.odometer span { font-size: 14px; opacity: 1; }
+.vehicle-top { text-shadow: 0 1px 5px #0009; }
+.vehicle-badge { text-shadow: none; }
+.distance-card { display: grid; grid-template-columns: 1fr 1fr; column-gap: 30px; }
+.distance-card .section-head, .distance-card #totalBasis { grid-column: 1 / -1; }
+.distance-card .main-number { margin: 18px 0 6px; font-size: 54px; }
+.distance-card .coverage { grid-column: 1; }
+.distance-card .stats { grid-column: 2; grid-row: 2 / 4; align-self: center; margin: 0; border: 0; padding: 0; }
+.warranty-card { margin: 22px 0; }
+.warranty-bar-label { gap: 12px; }
+.warranty-bar-label label { font-size: 15px; }
+.warranty-card progress { height: 10px; }
+.warranty-travel { border-radius: 14px; padding: 18px; }
+.range-toolbar { margin: 26px 0 18px; }
+.lower-grid { grid-template-columns: 1fr; }
+.insight-panel #insights { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; }
+.insight-panel .insight { border: 0; }
+.journey-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 20px; }
+#journeyCalendar { margin: 22px 0; }
+#journeyCalendar .calendar-grid button { min-height: 78px; }
+#journeyCalendar .calendar-km { font-size: 18px; }
+.note-search-panel { margin-bottom: 22px; }
+.record-choices { display:grid; gap:12px; margin-top:24px; }
+.record-choices button { justify-content:flex-start; text-align:left; padding:18px; }
+.record-choices strong,.record-choices small { display:block; }
+.record-choices strong { font-size:16px; }
+.record-choices small { color:var(--muted); margin-top:5px; font-size:14px; }
+.record-choices .icon { width:24px; height:24px; flex-shrink:0; margin-right:8px; }
+@media(min-width:1000px) {
+  .app-shell { position:relative; padding:0 40px 0 205px; }
+  .topbar { height:94px; }
+  .primary-nav { position:absolute; left:24px; top:134px; width:155px; display:flex; flex-direction:column; align-items:stretch; gap:10px; }
+  .primary-nav button { justify-content:flex-start; padding:14px 18px; font-size:15px; }
+  .primary-nav button.active { background:var(--green-soft); color:var(--green); }
+  .primary-nav .icon { display:block; }
+  .primary-nav .nav-upload { display:none; }
+}
+@media(max-width:700px) {
+  .panel { padding:20px; border-radius:20px; }
+  .vehicle-card { min-height:310px; }
+  .hero-image { object-fit:contain; object-position:center top; height:auto; }
+  .vehicle-card { background:#141e26; }
+  .vehicle-shade { background:linear-gradient(180deg,#09131b33,transparent 48%,#141e26 82%); }
+  .vehicle-bottom { left:20px; right:20px; bottom:20px; gap:12px; }
+  .vehicle-bottom h2 { font-size:22px; }
+  .odometer strong { font-size:29px; }
+  .odometer span { font-size:12px; }
+  .distance-card { display:block; }
+  .distance-card .stats { margin-top:20px; padding-top:20px; border-top:1px solid var(--line); }
+  .distance-card .main-number { font-size:50px; }
+  .insight-panel #insights { display:block; }
+  .journey-heading { align-items:flex-start; }
+  .journey-heading h2 { font-size:18px; }
+  #journeyCalendar .calendar-grid button { min-height:60px; }
+  #journeyCalendar .calendar-km { font-size:15px; }
+  .warranty-bar-label { flex-wrap:wrap; }
+}
+@media(prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior:auto!important; transition:none!important; } }
