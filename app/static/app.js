@@ -1170,8 +1170,12 @@ $("clearNoteSearch").onclick = () => {
   $("noteSearch").value = ""; noteSearchLimit = 30; renderNoteSearch(); $("noteSearch").focus();
 };
 $("moreNoteResults").onclick = () => { noteSearchLimit += 30; renderNoteSearch(); };
-function openDay(date) {
+function openDay(date, mileageEntry = false) {
   daySelected = date;
+  $("dayKm").required = mileageEntry;
+  $("dayEditHint").textContent = mileageEntry
+    ? "填写今天累计行驶里程，不是仪表总里程，也不是本次新增里程。再次保存会替换当天原值；0 表示未行驶。手动保存后，截图识别不会覆盖此值。"
+    : "可补录，也可调大或调小。0 表示当天未行驶；手动保存后，截图识别不会覆盖此值。";
   const row = data.daily.find((r) => r.date === date);
   $("dayKm").value = row ? row.km : "";
   $("dayKm").dataset.previous = row ? String(row.km) : "";
@@ -1194,11 +1198,15 @@ function openDay(date) {
       node(
         "p",
         "muted",
-        "这一天暂时没有数据，不代表没有出行。请上传能覆盖这一天的原始截图。",
+        "这一天暂时没有数据，不代表没有出行。可直接填写公里数，也可以上传截图。",
       ),
     );
   $("dayUpload").textContent = row ? "补充里程截图" : "上传覆盖这一天的截图";
   showDialog("dayDialog");
+  if (mileageEntry) {
+    $("dayKm").focus();
+    $("dayKm").select();
+  }
 }
 async function refresh() {
   if (refreshing) return;
@@ -1789,6 +1797,7 @@ function chooseRecord() {
 $("uploadButton").onclick = chooseRecord;
 $("mobileUpload").onclick = chooseRecord;
 $("chooseScreenshot").onclick = () => { $("recordChoice").close(); openUpload(); };
+$("chooseMileage").onclick = () => { $("recordChoice").close(); openDay(today(), true); };
 $("chooseNote").onclick = () => { $("recordChoice").close(); openDay(today()); };
 $("writeNote").onclick = () => openDay(today());
 $("screenshotFile").onchange = () => {

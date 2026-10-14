@@ -392,8 +392,9 @@
     <div id="toast" role="status" hidden></div>
     <dialog id="recordChoice" aria-labelledby="recordChoiceTitle">
       <div class="dialog-head"><div><p class="eyebrow">ADD A NEW MEMORY</p><h2 id="recordChoiceTitle">记录一程</h2></div><button data-close="recordChoice" class="icon-button" aria-label="关闭记录选择">×</button></div>
-      <p class="muted">上传零跑截图，或记下今天的小事。</p>
+      <p class="muted">上传截图、手动填写公里数，或记下今天的小事。</p>
       <div class="record-choices">
+        <button id="chooseMileage" class="secondary"><svg class="icon"><use href="#i-plus" /></svg><span><strong>输入当天里程</strong><small>填写今天累计行驶公里数，不是仪表总里程</small></span></button>
         <button id="chooseScreenshot" class="secondary"><svg class="icon"><use href="#i-upload" /></svg><span><strong>上传里程截图</strong><small>识别里程与能耗，校验后入账</small></span></button>
         <button id="chooseNote" class="secondary"><svg class="icon"><use href="#i-record" /></svg><span><strong>写当天手记</strong><small>记录去过哪里，也可补充公里数</small></span></button>
       </div>

@@ -23,7 +23,7 @@ def test_edition_assets_and_unique_controls(storage):
             parser.feed(response.text)
             assert len(parser.ids) == len(set(parser.ids))
             for control in ('journeyTrend', 'journeyCalendar', 'recordChoice',
-                            'wMileage', 'wTime', 'weeklyTabs', 'noteSearch'):
+                            'wMileage', 'wTime', 'weeklyTabs', 'noteSearch', 'chooseMileage'):
                 assert control in parser.ids
         for asset in ('edition.css', 'c11-banner.jpg', 'leap-mark.svg'):
             response = client.get('/' + asset)
