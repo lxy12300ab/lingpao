@@ -27,6 +27,9 @@
     <link rel="stylesheet" href="/edition.css?v=__BUILD__" />
     <script src="/energy-math.js?v=__BUILD__" defer></script>
     <script src="/app.js?v=__BUILD__" defer></script>
+    <script src="/charge-range.js?v=__BUILD__" defer></script>
+    <script src="/charge-comparison.js?v=__BUILD__" defer></script>
+    <script src="/charging.js?v=__BUILD__" defer></script>
   </head>
   <body>
     <svg
@@ -35,6 +38,10 @@
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
+        <symbol id="i-battery" viewBox="0 0 24 24">
+          <rect x="3" y="6" width="17" height="12" rx="3" />
+          <path d="M22 10v4M8 10v4m4-4v4" />
+        </symbol>
         <symbol id="i-home" viewBox="0 0 24 24">
           <path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7" />
         </symbol>
@@ -86,8 +93,9 @@
             <svg class="icon"><use href="#i-energy" /></svg><span>能耗</span>
           </button>
           <button id="mobileUpload" class="nav-upload">
-            <svg class="icon"><use href="#i-plus" /></svg><span>记录一程</span>
+            <svg class="icon"><use href="#i-plus" /></svg><span>记一笔</span>
           </button>
+          <button data-page="charging"><svg class="icon"><use href="#i-battery" /></svg><span>充电</span></button>
         </nav>
         <div class="top-actions">
           <button id="refreshButton" class="icon-button" aria-label="刷新数据">
@@ -99,7 +107,7 @@
           >
             <svg class="icon"><use href="#i-settings" /></svg></button
           ><button id="uploadButton" class="primary desktop-upload">
-            <svg class="icon"><use href="#i-plus" /></svg>记录一程
+            <svg class="icon"><use href="#i-plus" /></svg>记一笔
           </button>
         </div>
       </header>
@@ -384,6 +392,35 @@
             </button>
           </section>
         </div>
+        <div id="page-charging" class="page-content" hidden>
+          <section class="panel">
+            <div class="section-head"><h2>我的充电账本</h2><button id="newCharge" class="primary">＋ 记录充电</button></div>
+            <div id="chargeRanges" class="pills charge-ranges" aria-label="充电统计时间范围">
+              <button data-charge-range="month" class="active" aria-pressed="true">本月</button>
+              <button data-charge-range="lastmonth" aria-pressed="false">上个月</button>
+              <button data-charge-range="quarter" aria-pressed="false">本季度</button>
+              <button data-charge-range="year" aria-pressed="false">本年</button>
+              <button data-charge-range="lastyear" aria-pressed="false">上一年</button>
+              <button data-charge-range="all" aria-pressed="false">全部</button>
+            </div>
+            <p id="chargeRangeCaption" class="muted"></p>
+            <div class="charge-month"><label>统计月份 <input type="month" id="chargeMonth"></label><label>地点 <select id="chargeLocation"><option value="home">家充 · 专用电表</option><option value="all">全部充电</option><option value="public">公共充电</option><option value="other">其他</option></select></label></div>
+            <p id="chargeStatus" role="status" class="muted"></p>
+            <div id="chargeLossHero" aria-live="polite"></div>
+            <div id="chargeSummary" class="charge-summary"></div>
+            <p class="muted">估算充入 = 81.9 × 电量增量。电表数据可日后补录；损耗率仅统计已补电表的同一批记录，不是百分比的简单平均。</p>
+          </section>
+          <section class="panel charge-section"><h2>月度电表对比 · 仅家充</h2><p class="muted">独立车用电表的整月总用电，单独填写在这里，不计入某一次充电。漏记或跨月充电会影响比较。</p><form id="chargeMeterForm"><label>本月电表总用电（度，可留空）<input id="chargeMeter" type="number" min="0" max="100000" step="any" inputmode="decimal"></label><button class="secondary" id="saveMeter">保存月度电表</button></form><div id="chargeMeterComparison" aria-live="polite"></div></section>
+          <section class="panel charge-section">
+            <div class="section-head"><h2>估算损耗率对比</h2><div class="segments" id="lossCompareTabs" aria-label="损耗率对比周期"><button type="button" data-loss-grain="month" class="active" aria-pressed="true">月度</button><button type="button" data-loss-grain="year" aria-pressed="false">年度</button></div></div>
+            <p class="muted">比较所选地点的全部历史周期，不受上方日期筛选限制。最新在前；每页 12 个周期。</p>
+            <div id="lossCompareChart" class="loss-compare-chart" aria-label="各周期估算损耗率"></div>
+            <p class="muted">金色：估算损耗率 · 红色：负差额，需核对 · —：电表未补齐，暂不能计算。仅使用每个周期已配对记录合计，不平均单次损耗率。</p>
+            <div class="loss-table-scroll"><table class="loss-table"><caption>同批配对电量明细（度）</caption><thead><tr><th scope="col">周期</th><th scope="col">电表用电</th><th scope="col">估算充入</th><th scope="col">估算损耗</th><th scope="col">损耗率</th><th scope="col">配对 / 总笔数</th></tr></thead><tbody id="lossCompareRows"></tbody></table></div>
+            <div class="mileage-pager"><button id="lossCompareNewer" type="button">较新</button><span id="lossComparePage" role="status"></span><button id="lossCompareOlder" type="button">较早</button></div>
+          </section>
+          <section class="panel charge-section"><h2>充电明细</h2><div id="chargeList"></div></section>
+        </div>
         <footer>
           <span>数据留在你的车库里。</span><span id="buildLabel"></span>
         </footer>
@@ -391,13 +428,29 @@
     </div>
     <div id="toast" role="status" hidden></div>
     <dialog id="recordChoice" aria-labelledby="recordChoiceTitle">
-      <div class="dialog-head"><div><p class="eyebrow">ADD A NEW MEMORY</p><h2 id="recordChoiceTitle">记录一程</h2></div><button data-close="recordChoice" class="icon-button" aria-label="关闭记录选择">×</button></div>
-      <p class="muted">上传截图、手动填写公里数，或记下今天的小事。</p>
+      <div class="dialog-head"><div><p class="eyebrow">ADD A NEW MEMORY</p><h2 id="recordChoiceTitle">记一笔</h2></div><button data-close="recordChoice" class="icon-button" aria-label="关闭记录选择">×</button></div>
+      <p class="muted">里程、充电、手记，记录你的用车日常。</p>
       <div class="record-choices">
+        <button id="chooseCharge" class="secondary"><svg class="icon"><use href="#i-energy" /></svg><span><strong>记录充电</strong><small>首尾电量 · 电表用电 · 估算损耗</small></span></button>
         <button id="chooseMileage" class="secondary"><svg class="icon"><use href="#i-plus" /></svg><span><strong>输入当天里程</strong><small>填写今天累计行驶公里数，不是仪表总里程</small></span></button>
         <button id="chooseScreenshot" class="secondary"><svg class="icon"><use href="#i-upload" /></svg><span><strong>上传里程截图</strong><small>识别里程与能耗，校验后入账</small></span></button>
         <button id="chooseNote" class="secondary"><svg class="icon"><use href="#i-record" /></svg><span><strong>写当天手记</strong><small>记录去过哪里，也可补充公里数</small></span></button>
       </div>
+    </dialog>
+    <dialog id="chargeDialog" aria-labelledby="chargeTitle">
+      <div class="dialog-head"><h2 id="chargeTitle">记录充电</h2><button class="icon-button" data-close="chargeDialog" aria-label="关闭充电记录">×</button></div>
+      <form id="chargeForm">
+        <label>充电结束日期<input id="chargeDate" type="date" required></label>
+        <p class="muted">归入结束日期所在月份，一天可记多笔；历史记录随时可补电表数据。</p>
+        <div class="date-fields"><label>开始电量 %<input id="chargeStart" type="number" min="0" max="100" step="any" inputmode="decimal" required></label><label>结束电量 %<input id="chargeEnd" type="number" min="0" max="100" step="any" inputmode="decimal" required></label></div>
+        <p id="chargeEstimate" class="charge-estimate" aria-live="polite"></p>
+        <label>充电地点<select id="chargePlace"><option value="home">家充</option><option value="public">公共充电</option><option value="other">其他</option></select></label>
+        <label>本次电表实际用电（度，可日后补充）<input id="chargeGrid" type="number" min="0.001" max="1000" step="any" inputmode="decimal" placeholder="不是电表累计读数"></label>
+        <label>备注<textarea id="chargeNote" rows="2" maxlength="2000"></textarea></label>
+        <p id="chargeError" class="error" role="alert"></p>
+        <button class="primary full-width" id="chargeSave">保存充电记录</button>
+      </form>
+      <button id="chargeDelete" class="danger-button full-width" hidden>删除这条充电记录</button>
     </dialog>
     <dialog id="loginDialog" aria-labelledby="loginTitle">
       <form id="loginForm">

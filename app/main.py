@@ -43,6 +43,8 @@ async def no_cache(request, call_next):
     return response
 
 app.include_router(router)
+from .routes.charging import router as charging_router
+app.include_router(charging_router)
 
 @app.get('/api/health')
 def health():

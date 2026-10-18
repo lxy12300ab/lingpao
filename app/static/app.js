@@ -250,6 +250,7 @@ function placeJourneySections(name) {
 placeJourneySections("overview");
 function navigate(name) {
   placeJourneySections(name);
+  document.querySelector(".range-toolbar").hidden = name === "charging";
   if (name === "overview" && pageName !== "overview") {
     selectedMileage = "";
     mileagePage = 0;
@@ -265,6 +266,7 @@ function navigate(name) {
     else b.removeAttribute("aria-current");
   });
   const headings = {
+    charging: ["ENERGY IN, JOURNEYS OUT", "每一次补能，都有记录。", "首尾电量估算充入，专用电表核对实际用电。"],
     overview: [
       "YOUR EVERYDAY JOURNEY",
       "每一程，都值得记录。",
@@ -384,6 +386,7 @@ function render() {
   }
   if (pageName === "energy") renderEnergy();
   if (pageName === "records") renderRecords(rows);
+  if (pageName === "charging") window.Charging?.load();
 }
 function chartData(rows) {
   const grouped = new Map(),

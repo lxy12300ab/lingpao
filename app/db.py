@@ -42,6 +42,14 @@ def init():
           date TEXT PRIMARY KEY, note TEXT NOT NULL,
           created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
         PRAGMA user_version=1;
+        CREATE TABLE IF NOT EXISTS charging (
+          id INTEGER PRIMARY KEY, date TEXT NOT NULL, start_pct REAL NOT NULL,
+          end_pct REAL NOT NULL, capacity REAL NOT NULL DEFAULT 81.9,
+          grid_kwh REAL, location TEXT NOT NULL, note TEXT NOT NULL DEFAULT '',
+          revision TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS charging_meter (
+          month TEXT PRIMARY KEY, kwh REAL, revision TEXT NOT NULL);
         ''')
 
 def log(c, action, target, status, message):
