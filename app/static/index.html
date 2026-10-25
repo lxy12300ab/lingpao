@@ -25,6 +25,8 @@
     <script src="/theme.js?v=__BUILD__"></script>
     <link rel="stylesheet" href="/style.css?v=__BUILD__" />
     <link rel="stylesheet" href="/edition.css?v=__BUILD__" />
+    <link rel="stylesheet" href="/vehicle-viewer.css?v=__BUILD__" />
+    <script src="/vehicle-viewer.js?v=__BUILD__" defer></script>
     <script src="/energy-math.js?v=__BUILD__" defer></script>
     <script src="/app.js?v=__BUILD__" defer></script>
     <script src="/charge-range.js?v=__BUILD__" defer></script>
@@ -203,9 +205,13 @@
                 </div>
               </div>
             </section>
-            <section class="vehicle-card">
-              <img src="/c11-banner.jpg?v=__BUILD__" alt="夜幕中的零跑 C11" class="hero-image" fetchpriority="high" />
+            <section id="vehicleViewer" class="vehicle-card vehicle-interactive" aria-label="我的零跑 C11，左右拖动或使用方向键旋转车辆" aria-describedby="vehicleHint">
+              <img src="/c11-banner.jpg?v=__BUILD__" alt="零跑 C11" class="hero-image vehicle-poster" fetchpriority="high" />
+              <div class="vehicle-stage"><canvas width="843" height="562" aria-hidden="true" hidden></canvas></div>
               <div class="vehicle-shade"></div>
+              <button class="vehicle-turn prev" type="button" data-vehicle-prev aria-label="向左旋转车辆" hidden>‹</button>
+              <button class="vehicle-turn next" type="button" data-vehicle-next aria-label="向右旋转车辆" hidden>›</button>
+              <p id="vehicleHint" class="vehicle-hint">左右拖动 · 360° 查看座驾</p>
               <div class="vehicle-top">
                 <span class="vehicle-badge">我的座驾</span
                 ><span>LEAPMOTOR</span>

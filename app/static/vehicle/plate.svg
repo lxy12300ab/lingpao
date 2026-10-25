@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="280" viewBox="0 0 880 280">
+  <defs><linearGradient id="green" x2="0" y2="1"><stop stop-color="#eef7ee"/><stop offset="1" stop-color="#75d78c"/></linearGradient></defs>
+  <rect width="880" height="280" rx="12" fill="url(#green)"/>
+  <rect x="8" y="8" width="864" height="264" rx="9" fill="none" stroke="#22372b" stroke-width="7"/>
+  <g fill="#15291e" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="600" font-size="174" text-anchor="middle">
+    <text x="110" y="204">沪</text><text x="226" y="204">B</text>
+    <circle cx="306" cy="152" r="12"/>
+    <text x="382" y="204">A</text><text x="482" y="204">Y</text>
+    <text x="581" y="204">7</text><text x="681" y="204">7</text><text x="781" y="204">2</text>
+  </g>
+  <g fill="#a3b7a9" stroke="#546e5e" stroke-width="2"><circle cx="160" cy="23" r="7"/><circle cx="720" cy="23" r="7"/><circle cx="160" cy="257" r="7"/><circle cx="720" cy="257" r="7"/></g>
+</svg>

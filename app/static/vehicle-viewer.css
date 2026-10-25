@@ -1,0 +1,67 @@
+.vehicle-card.vehicle-interactive {
+  width:100%;
+  min-width:0;
+  min-height:400px;
+  isolation:isolate;
+  color:#27362e;
+  background:#e2dfd8 url('/vehicle/showroom.png') center 52% / cover no-repeat;
+}
+.vehicle-interactive .vehicle-shade {
+  background:linear-gradient(180deg,transparent 52%,#101a1614 70%,#101a16b8 100%);
+  pointer-events:none;
+}
+.vehicle-interactive .vehicle-top,.vehicle-interactive .vehicle-bottom {
+  pointer-events:none;
+  z-index:2;
+}
+.vehicle-interactive .vehicle-top { top:20px;left:22px;right:22px; }
+.vehicle-interactive .vehicle-bottom {
+  bottom:20px;left:22px;right:22px;color:#fff;
+  text-shadow:0 1px 6px #07100b30;
+}
+.vehicle-interactive .vehicle-bottom h2 { font-size:23px; }
+.vehicle-interactive .vehicle-bottom p { display:none; }
+.vehicle-interactive .vehicle-badge { background:#ffffffe0;color:#3d4d43;border-color:#ffffff80; }
+.vehicle-stage {
+  position:absolute;
+  width:min(112%,760px);
+  left:50%;
+  top:44%;
+  transform:translate(-50%,-50%);
+  aspect-ratio:843 / 562;
+  pointer-events:none;
+}
+.vehicle-stage canvas { display:block;width:100%;height:auto; }
+.vehicle-stage canvas[hidden] { display:none; }
+.vehicle-interactive .vehicle-poster { object-fit:cover;object-position:center; }
+.vehicle-interactive:not([data-ready='true']) { color:#fff; }
+.vehicle-interactive:not([data-ready='true']) .vehicle-shade { background:linear-gradient(180deg,#101a1222,transparent 25%,#121d159c); }
+.vehicle-interactive:not([data-ready='true']) .vehicle-hint { color:#fff; }
+.vehicle-interactive[data-ready='true'] { cursor:grab;touch-action:pan-y pinch-zoom;user-select:none;-webkit-user-select:none; }
+.vehicle-interactive.is-dragging { cursor:grabbing; }
+.vehicle-interactive:focus-visible { outline:3px solid var(--green);outline-offset:4px; }
+.vehicle-hint {
+  position:absolute;z-index:2;bottom:70px;left:0;right:0;
+  margin:0;text-align:center;font-size:11px;letter-spacing:.5px;
+  color:#ffffffe0;pointer-events:none;text-shadow:0 1px 5px #07100b66;
+}
+.vehicle-turn {
+  position:absolute;z-index:3;top:46%;width:32px;height:40px;padding:0;
+  display:grid;place-items:center;background:#ffffffa8;border:1px solid #ffffffc0;
+  border-radius:12px;color:#425348;font-size:24px;line-height:1;box-shadow:0 2px 8px #29332908;
+}
+.vehicle-turn[hidden] { display:none; }
+.vehicle-turn:hover { background:#fffffff0; }
+.vehicle-turn.prev { left:10px; }
+.vehicle-turn.next { right:10px; }
+@media (max-width:700px) {
+  .vehicle-card.vehicle-interactive { min-height:285px;aspect-ratio:4 / 3; }
+  .vehicle-stage { width:122%;top:44%; }
+  .vehicle-interactive .vehicle-top { top:17px;left:18px;right:18px; }
+  .vehicle-interactive .vehicle-bottom { left:18px;right:18px;bottom:18px; }
+  .vehicle-interactive .vehicle-bottom h2 { font-size:21px; }
+  .vehicle-interactive .odometer strong { font-size:26px; }
+  .vehicle-hint { font-size:10px; }
+  .vehicle-turn { width:28px;height:36px;border-radius:10px;top:auto;bottom:65px; }
+  .vehicle-turn.prev { left:5px; }.vehicle-turn.next { right:5px; }
+}
